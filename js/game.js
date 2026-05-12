@@ -103,6 +103,67 @@ const POWERUP_DEFS = [
 			}
 		},
 	},
+	{
+		id: 'territory-grab',
+		name: 'Territory Grab',
+		color: '#ffdd00',
+		icon: '<span class="pu-icon pu-territory-grab">💥</span>',
+		apply(bot) {
+			const game = bot.game;
+			const ab = game.activeBounds;
+			const radius = 5;
+			const rMin = Math.max(0, bot.row - radius);
+			const rMax = Math.min(ROWS - 1, bot.row + radius);
+			const cMin = Math.max(0, bot.col - radius);
+			const cMax = Math.min(COLS - 1, bot.col + radius);
+			for (let r = rMin; r <= rMax; r++) {
+				for (let c = cMin; c <= cMax; c++) {
+					if (Math.abs(r - bot.row) + Math.abs(c - bot.col) > radius) continue;
+					if (ab && (c < ab.minCol || c > ab.maxCol || r < ab.minRow || r > ab.maxRow)) continue;
+					if (game.cells[r][c] === null) game.cells[r][c] = bot;
+				}
+			}
+		},
+	},
+	{
+		id: 'freeze',
+		name: 'Deep Freeze',
+		color: '#88eeff',
+		icon: '<span class="pu-icon pu-freeze">❄️</span>',
+		apply(bot) {
+			const game = bot.game;
+			const collectorDefIndex = bot.defIndex;
+			for (const b of game.bots) {
+				if (!b.dead && b.defIndex !== collectorDefIndex) b.frozen = true;
+			}
+			if (game.freezeTimeout) clearTimeout(game.freezeTimeout);
+			game.freezeTimeout = setTimeout(() => {
+				for (const b of game.bots) b.frozen = false;
+				game.freezeTimeout = null;
+			}, 5000);
+		},
+	},
+	{
+		id: 'teleport',
+		name: 'Teleport',
+		color: '#cc88ff',
+		icon: '<span class="pu-icon pu-teleport">🌀</span>',
+		apply(bot) {
+			const game = bot.game;
+			const ab = game.activeBounds;
+			const candidates = [];
+			for (let r = 0; r < ROWS; r++) {
+				for (let c = 0; c < COLS; c++) {
+					if (game.cells[r][c] !== null) continue;
+					if (ab && (c < ab.minCol || c > ab.maxCol || r < ab.minRow || r > ab.maxRow)) continue;
+					candidates.push([c, r]);
+				}
+			}
+			if (candidates.length === 0) return;
+			const [c, r] = candidates[Math.floor(Math.random() * candidates.length)];
+			game.moveBotTo(bot, c, r);
+		},
+	},
 ];
 
 class Game {
@@ -133,6 +194,7 @@ class Game {
 		this.damagedThisTick = new Set();
 		this.brWinnerDefIndex = null;
 		this.shimmerFrame = null;
+		this.freezeTimeout = null;
 	}
 
 	start(resetTournament = true) {
@@ -155,6 +217,10 @@ class Game {
 		if (this.shimmerFrame) {
 			cancelAnimationFrame(this.shimmerFrame);
 			this.shimmerFrame = null;
+		}
+		if (this.freezeTimeout) {
+			clearTimeout(this.freezeTimeout);
+			this.freezeTimeout = null;
 		}
 		this.brWinnerDefIndex = null;
 
@@ -323,7 +389,7 @@ class Game {
 		this.damagedThisTick = new Set();
 
 		for (const bot of this.bots) {
-			if (!bot.dead) {
+			if (!bot.dead && !bot.frozen) {
 				bot.moveCooldown++;
 				if (bot.moveCooldown >= bot.ticksPerMove) {
 					bot.moveCooldown = 0;
@@ -426,6 +492,14 @@ class Game {
 			const g = Math.round(t * 255);
 			const b = Math.round(Math.max(0, t * 2 - 1) * 255);
 			ctx.fillStyle = `rgb(255,${g},${b})`;
+			ctx.fillRect(x, y, w, h);
+			ctx.fillStyle = bot.color;
+			ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+		} else if (bot.frozen) {
+			const t = (Math.sin(Date.now() / 300) + 1) / 2;
+			const r = Math.round(136 + t * 119);
+			const g = Math.round(221 + t * 34);
+			ctx.fillStyle = `rgb(${r},${g},255)`;
 			ctx.fillRect(x, y, w, h);
 			ctx.fillStyle = bot.color;
 			ctx.fillRect(x + 2, y + 2, w - 4, h - 4);

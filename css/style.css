@@ -640,6 +640,18 @@ input[type=range]::-webkit-slider-thumb {
 	font-size: 0.85em;
 }
 
+.pu-territory-grab {
+	font-size: 0.85em;
+}
+
+.pu-freeze {
+	font-size: 0.85em;
+}
+
+.pu-teleport {
+	font-size: 0.85em;
+}
+
 .health-bar {
 	display: inline-flex;
 	gap: 2px;
