@@ -304,14 +304,6 @@ input[type=range]::-webkit-slider-thumb {
 	order: 4;
 }
 
-.bot-swatch {
-	order: 1;
-}
-
-.bot-name {
-	order: 2;
-}
-
 .speed-indicator {
 	order: 3;
 	color: #44cc44;
@@ -647,6 +639,30 @@ input[type=range]::-webkit-slider-thumb {
 .pu-fire {
 	font-size: 0.85em;
 }
+
+.health-bar {
+	display: inline-flex;
+	gap: 2px;
+	align-items: center;
+	margin-left: 4px;
+}
+
+.health-box {
+	width: 5px;
+	height: 5px;
+	flex-shrink: 0;
+}
+
+.hb-green  { background: #44cc44; }
+.hb-yellow { background: #ffdd00; }
+.hb-red    { background: #ff3333; }
+
+@keyframes hb-blink {
+	0%, 100% { opacity: 1; }
+	50%       { opacity: 0; }
+}
+
+.hb-blink { animation: hb-blink 0.5s ease-in-out infinite; }
 
 .tournament-champion {
 	text-align: center;
