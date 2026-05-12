@@ -215,7 +215,7 @@ class Game {
 				bot.moveCooldown++;
 				if (bot.moveCooldown >= bot.ticksPerMove) {
 					bot.moveCooldown = 0;
-					if (!bot.makeMove() || bot.movesSinceNewLand >= 100) {
+					if (!bot.makeMove()) {
 						bot.dead = true;
 					}
 				}
@@ -444,17 +444,40 @@ speedSlider.addEventListener('input', () => {
 
 const modalOverlay = document.getElementById('modal-overlay');
 
+function snapshotSettings() {
+	return {
+		bots: Array.from(document.querySelectorAll('.bot-checkbox')).map(cb => cb.checked),
+		powerups: Array.from(document.querySelectorAll('.powerup-checkbox')).map(cb => cb.checked),
+		powerupCount: document.getElementById('powerup-count').value,
+	};
+}
+
+function restoreSettings(snapshot) {
+	document.querySelectorAll('.bot-checkbox').forEach((cb, i) => cb.checked = snapshot.bots[i]);
+	document.querySelectorAll('.powerup-checkbox').forEach((cb, i) => cb.checked = snapshot.powerups[i]);
+	const slider = document.getElementById('powerup-count');
+	slider.value = snapshot.powerupCount;
+	document.getElementById('powerup-count-display').textContent = snapshot.powerupCount;
+}
+
+let settingsSnapshot = null;
+
 document.getElementById('new-game').addEventListener('click', () => {
+	game.start();
+});
+
+document.getElementById('settings').addEventListener('click', () => {
+	settingsSnapshot = snapshotSettings();
 	modalOverlay.classList.remove('hidden');
 });
 
 document.getElementById('modal-cancel').addEventListener('click', () => {
+	if (settingsSnapshot) restoreSettings(settingsSnapshot);
 	modalOverlay.classList.add('hidden');
 });
 
-document.getElementById('modal-start').addEventListener('click', () => {
+document.getElementById('modal-ok').addEventListener('click', () => {
 	modalOverlay.classList.add('hidden');
-	game.start();
 });
 
 const powerupCountSlider = document.getElementById('powerup-count');
