@@ -120,7 +120,7 @@ const POWERUP_DEFS = [
 				for (let c = cMin; c <= cMax; c++) {
 					if (Math.abs(r - bot.row) + Math.abs(c - bot.col) > radius) continue;
 					if (ab && (c < ab.minCol || c > ab.maxCol || r < ab.minRow || r > ab.maxRow)) continue;
-					if (game.cells[r][c] === null) game.cells[r][c] = bot;
+					if (game.cells[r][c] !== bot) game.cells[r][c] = bot;
 				}
 			}
 		},
@@ -150,18 +150,21 @@ const POWERUP_DEFS = [
 		icon: '<span class="pu-icon pu-teleport">🌀</span>',
 		apply(bot) {
 			const game = bot.game;
-			const ab = game.activeBounds;
-			const candidates = [];
-			for (let r = 0; r < ROWS; r++) {
-				for (let c = 0; c < COLS; c++) {
-					if (game.cells[r][c] !== null) continue;
-					if (ab && (c < ab.minCol || c > ab.maxCol || r < ab.minRow || r > ab.maxRow)) continue;
-					candidates.push([c, r]);
+			setTimeout(() => {
+				if (bot.dead) return;
+				const ab = game.activeBounds;
+				const candidates = [];
+				for (let r = 0; r < ROWS; r++) {
+					for (let c = 0; c < COLS; c++) {
+						if (game.cells[r][c] !== null) continue;
+						if (ab && (c < ab.minCol || c > ab.maxCol || r < ab.minRow || r > ab.maxRow)) continue;
+						candidates.push([c, r]);
+					}
 				}
-			}
-			if (candidates.length === 0) return;
-			const [c, r] = candidates[Math.floor(Math.random() * candidates.length)];
-			game.moveBotTo(bot, c, r);
+				if (candidates.length === 0) return;
+				const [c, r] = candidates[Math.floor(Math.random() * candidates.length)];
+				game.moveBotTo(bot, c, r);
+			}, 0);
 		},
 	},
 ];
@@ -243,7 +246,7 @@ class Game {
 
 		const scorePanelTitle = document.querySelector('.score-panel-title');
 		if (scorePanelTitle) {
-			scorePanelTitle.textContent = this.gameMode === 1 ? `round ${this.tournamentRound}` : 'Scores';
+			scorePanelTitle.textContent = this.gameMode === 1 ? `round ${this.tournamentRound}` : this.gameMode === 2 ? 'Battle Royale' : 'Scores';
 		}
 
 		if (this.gameMode === 2) {
