@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Jason's Game Of Life (aka Land Grab Simulator)</title>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<h1>Jason's Game Of Life <span class="subtitle">aka Land Grab Simulator</span></h1>
+	<canvas id="grid"></canvas>
+	<div class="controls">
+		<div class="speed-control">
+			<label for="speed">Speed:</label>
+			<span class="speed-label">Slow</span>
+			<input type="range" id="speed" min="0" max="8" value="2">
+			<span class="speed-label">Fast</span>
+			<span id="speed-display">1s</span>
+		</div>
+		<button id="run-again">Run Again</button>
+	</div>
+	<script src="js/bots/lawnmower.js"></script>
+	<script src="js/bots/chaos.js"></script>
+	<script src="js/game.js"></script>
+</body>
+</html>
