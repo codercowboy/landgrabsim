@@ -28,15 +28,17 @@ class LawnmowerBot {
 				if (this.isOwnCell(nextCol, nextRow)) {
 					const oppIndex = (this.dirIndex + 2) % 4;
 					const [odc, odr] = this.dirs[oppIndex];
-					if (this.game.canMoveTo(this.col + odc, this.row + odr, this)) {
+					const oppCol = this.col + odc;
+					const oppRow = this.row + odr;
+					if (this.game.canMoveTo(oppCol, oppRow, this) && !this.isOwnCell(oppCol, oppRow)) {
 						this.dirIndex = oppIndex;
-						this.game.moveBotTo(this, this.col + odc, this.row + odr);
+						this.game.moveBotTo(this, oppCol, oppRow);
 						return true;
 					}
-				} else {
-					this.game.moveBotTo(this, nextCol, nextRow);
-					return true;
+					// opposite is also own territory — just push forward, no reversal
 				}
+				this.game.moveBotTo(this, nextCol, nextRow);
+				return true;
 			}
 
 			this.dirIndex = (this.dirIndex + 1) % 4;

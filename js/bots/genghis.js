@@ -5,6 +5,8 @@ class GenghisBot {
 		this.row = row;
 		this.color = color;
 		this.dead = false;
+		this.lastCol = null;
+		this.lastRow = null;
 	}
 
 	makeMove() {
@@ -30,18 +32,34 @@ class GenghisBot {
 		const dc = Math.sign(bestCol - this.col);
 		const dr = Math.sign(bestRow - this.row);
 
+		const seen = new Set();
 		const moves = [];
-		if (dc !== 0) moves.push([dc, 0]);
-		if (dr !== 0) moves.push([0, dr]);
-		if (dc !== 0 && dr !== 0) {
-			moves.push([0, dr]);
-			moves.push([dc, 0]);
+		for (const dir of [[dc, 0], [0, dr], [-dc, 0], [0, -dr]]) {
+			const key = dir.join(',');
+			if ((dir[0] !== 0 || dir[1] !== 0) && !seen.has(key)) {
+				seen.add(key);
+				moves.push(dir);
+			}
 		}
-		moves.push([-dc, 0], [0, -dr]);
+
+		const prevCol = this.lastCol;
+		const prevRow = this.lastRow;
 
 		for (const [mc, mr] of moves) {
-			if (mc === 0 && mr === 0) continue;
+			const nc = this.col + mc;
+			const nr = this.row + mr;
+			if (nc === prevCol && nr === prevRow) continue;
+			if (this.game.canMoveTo(nc, nr, this)) {
+				this.lastCol = this.col;
+				this.lastRow = this.row;
+				this.game.moveBotTo(this, nc, nr);
+				return true;
+			}
+		}
+		for (const [mc, mr] of moves) {
 			if (this.game.canMoveTo(this.col + mc, this.row + mr, this)) {
+				this.lastCol = this.col;
+				this.lastRow = this.row;
 				this.game.moveBotTo(this, this.col + mc, this.row + mr);
 				return true;
 			}
