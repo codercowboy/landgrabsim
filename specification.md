@@ -323,3 +323,66 @@ During tournament mode, the "Scores" heading in the side panel is replaced with 
 #### `start(resetTournament)` signature
 
 `start()` accepts an optional boolean (default `true`). When `false`, tournament state is preserved and only the grid, bots, and powerups are reset for a new round.
+
+---
+
+### Battle Royale
+
+Single-round mode. The last bot type standing wins. No timer-based end condition — the game runs until only one bot type (by `defIndex`) has alive instances, or until the shrinking perimeter kills everyone.
+
+#### Health
+
+Each bot starts with 100 HP. HP is tracked per bot instance (`bot.health`). HP never regenerates.
+
+Bots still cannot enter cells owned by other bots (normal blocking rules apply). When a bot attempts to move into a living enemy's cell and is blocked, it loses 5 HP — this is the "bounce" damage. Bounce damage is capped at once per tick per bot regardless of how many blocked directions were tried (tracked via `game.damagedThisTick`, a `Set` cleared at the start of each tick). When HP reaches 0, the bot dies.
+
+Scout's custom `canMoveTo` also applies bounce damage when hitting non-team cells in battle royale. Scout teammates' cells remain passable with no damage.
+
+Bots spawned mid-game (Hydra splits, Multiball) receive `health = 100`.
+
+#### Shrinking perimeter
+
+The active play area is tracked as `game.activeBounds = { minCol, maxCol, minRow, maxRow }`, initialized to the full grid at game start. Every 10 seconds (`game.shrinkInterval`), `shrinkPerimeter()` fires:
+
+1. Each boundary shrinks by 1 (`minCol++`, `maxCol--`, `minRow++`, `maxRow--`). Stops shrinking if fewer than 3 columns or 3 rows remain.
+2. Any bot whose current footprint (all cells for size > 1) lies outside the new bounds dies immediately.
+3. The board is re-rendered. If ≤ 1 bot type remains alive, `endGame()` is called.
+
+Inactive cells (outside `activeBounds`) are skipped in the render loop — the canvas background shows through. Dead bot markers at those positions are still drawn by `drawBot()`. `canMoveTo` rejects inactive cells as impassable.
+
+`shrinkInterval` is cleared in `endGame()` and at the top of `start()`.
+
+#### End condition
+
+`tick()` checks after each tick: if the number of distinct `defIndex` values among alive bots is ≤ 1, `endGame()` is called. `shrinkPerimeter()` performs the same check after each shrink. The game-length timer is still active but battle royale typically ends by elimination or perimeter collapse before it fires.
+
+#### Score panel in battle royale
+
+The score panel shows all bot types that were in the game, sorted by average health of alive instances (descending). Dead types sort to the bottom at 0. The panel displays:
+
+- Color swatch
+- Bot name
+- Powerup icons (if any collected)
+- Health value (average of alive instances, rounded)
+- Health bar
+
+The bot type with the highest average health is highlighted as leader (white name, gold health value) — same CSS as the territory leader in boring/tournament mode.
+
+#### Health bar
+
+Three 5×5px boxes displayed after the health value. State transitions based on the bot's current health (average for the type):
+
+| Health | Box 1 | Box 2 | Box 3 |
+|--------|-------|-------|-------|
+| > 90   | green | green | green |
+| 81–90  | green | green | yellow |
+| 71–80  | green | green | red |
+| 61–70  | green | green | — |
+| 51–60  | green | yellow | — |
+| 41–50  | green | red | — |
+| 31–40  | green | — | — |
+| 21–30  | yellow | — | — |
+| 1–20   | red (blinking) | — | — |
+| 0      | — | — | — |
+
+Blinking is a CSS animation (`hb-blink`) on the `.health-box` element.

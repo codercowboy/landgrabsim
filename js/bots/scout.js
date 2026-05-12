@@ -13,9 +13,25 @@ class ScoutBot {
 
 	canMoveTo(col, row) {
 		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+		const game = this.game;
+		if (game.gameMode === 2 && game.activeBounds) {
+			const b = game.activeBounds;
+			if (col < b.minCol || col > b.maxCol || row < b.minRow || row > b.maxRow) return false;
+		}
 		if (this.onFire) return true;
-		const cell = this.game.cells[row][col];
-		return cell === null || cell === this || cell.color === this.color;
+		const cell = game.cells[row][col];
+		const passable = cell === null || cell === this || cell.color === this.color;
+		if (!passable && game.gameMode === 2 && cell !== null && !cell.dead) {
+			if (!game.damagedThisTick.has(this)) {
+				game.damagedThisTick.add(this);
+				this.health -= 5;
+				if (this.health <= 0) {
+					this.health = 0;
+					this.dead = true;
+				}
+			}
+		}
+		return passable;
 	}
 
 	makeMove() {

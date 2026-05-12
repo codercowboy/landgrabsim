@@ -127,6 +127,9 @@ class Game {
 		this.tournamentRound = 0;
 		this.tournamentTarget = 3;
 		this.tournamentOver = false;
+		this.activeBounds = null;
+		this.shrinkInterval = null;
+		this.damagedThisTick = new Set();
 	}
 
 	start(resetTournament = true) {
@@ -141,6 +144,10 @@ class Game {
 		if (this.gameTimeout) {
 			clearTimeout(this.gameTimeout);
 			this.gameTimeout = null;
+		}
+		if (this.shrinkInterval) {
+			clearInterval(this.shrinkInterval);
+			this.shrinkInterval = null;
 		}
 
 		document.getElementById('tournament-overlay').classList.add('hidden');
@@ -164,6 +171,14 @@ class Game {
 		if (scorePanelTitle) {
 			scorePanelTitle.textContent = this.gameMode === 1 ? `round ${this.tournamentRound}` : 'Scores';
 		}
+
+		if (this.gameMode === 2) {
+			this.activeBounds = { minCol: 0, maxCol: COLS - 1, minRow: 0, maxRow: ROWS - 1 };
+			this.shrinkInterval = setInterval(() => this.shrinkPerimeter(), 10000);
+		} else {
+			this.activeBounds = null;
+		}
+		this.damagedThisTick = new Set();
 
 		const boardSizeRadio = document.querySelector('input[name="board-size"]:checked');
 		const boardSize = BOARD_SIZES[boardSizeRadio ? parseInt(boardSizeRadio.value, 10) : 0];
@@ -221,6 +236,7 @@ class Game {
 				bot.movesSinceNewLand = 0;
 				bot.ticksPerMove = ticksPerMove;
 				bot.moveCooldown = 0;
+				if (this.gameMode === 2) bot.health = 100;
 				group.push(bot);
 			}
 			if (group.length > 1) {
@@ -296,6 +312,8 @@ class Game {
 	}
 
 	tick() {
+		this.damagedThisTick = new Set();
+
 		for (const bot of this.bots) {
 			if (!bot.dead) {
 				bot.moveCooldown++;
@@ -310,7 +328,12 @@ class Game {
 
 		this.render();
 
-		if (this.bots.every(b => b.dead)) {
+		if (this.gameMode === 2) {
+			const aliveTypes = new Set(
+				this.bots.filter(b => !b.dead && b.defIndex !== undefined).map(b => b.defIndex)
+			);
+			if (aliveTypes.size <= 1) this.endGame();
+		} else if (this.bots.every(b => b.dead)) {
 			this.endGame();
 		}
 	}
@@ -320,9 +343,11 @@ class Game {
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
 		const drawn = new Set();
+		const ab = this.activeBounds;
 		for (let r = 0; r < ROWS; r++) {
 			for (let c = 0; c < COLS; c++) {
 				if (drawn.has(r * COLS + c)) continue;
+				if (ab && (c < ab.minCol || c > ab.maxCol || r < ab.minRow || r > ab.maxRow)) continue;
 				const bot = this.cells[r][c];
 				const x = c * CELL_SIZE + 1;
 				const y = r * CELL_SIZE + 1;
@@ -391,8 +416,23 @@ class Game {
 
 	canMoveTo(col, row, bot) {
 		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+		if (this.gameMode === 2 && this.activeBounds) {
+			const b = this.activeBounds;
+			if (col < b.minCol || col > b.maxCol || row < b.minRow || row > b.maxRow) return false;
+		}
 		if (bot.onFire) return true;
 		const cell = this.cells[row][col];
+		if (this.gameMode === 2 && cell !== null && cell !== bot && !cell.dead) {
+			if (!this.damagedThisTick.has(bot)) {
+				this.damagedThisTick.add(bot);
+				bot.health -= 5;
+				if (bot.health <= 0) {
+					bot.health = 0;
+					bot.dead = true;
+				}
+			}
+			return false;
+		}
 		return cell === null || cell === bot;
 	}
 
@@ -415,6 +455,7 @@ class Game {
 		bot.movesSinceNewLand = 0;
 		bot.ticksPerMove = 20;
 		bot.moveCooldown = 0;
+		if (this.gameMode === 2) bot.health = 100;
 		this.cells[row][col] = bot;
 		this.bots.push(bot);
 	}
@@ -427,6 +468,10 @@ class Game {
 		if (this.gameTimeout) {
 			clearTimeout(this.gameTimeout);
 			this.gameTimeout = null;
+		}
+		if (this.shrinkInterval) {
+			clearInterval(this.shrinkInterval);
+			this.shrinkInterval = null;
 		}
 		clearInterval(this.clockInterval);
 		this.clockInterval = null;
@@ -444,6 +489,39 @@ class Game {
 			el.classList.remove('clock-urgent');
 			el.classList.add('clock-done');
 		}
+	}
+
+	shrinkPerimeter() {
+		const b = this.activeBounds;
+		if (!b || this.gameMode !== 2) return;
+		if (b.maxCol - b.minCol < 2 || b.maxRow - b.minRow < 2) return;
+
+		b.minCol++;
+		b.maxCol--;
+		b.minRow++;
+		b.maxRow--;
+
+		for (const bot of this.bots) {
+			if (bot.dead) continue;
+			const s = bot.size || 1;
+			let outside = false;
+			for (let dc = 0; dc < s && !outside; dc++) {
+				for (let dr = 0; dr < s && !outside; dr++) {
+					if (
+						bot.col + dc < b.minCol || bot.col + dc > b.maxCol ||
+						bot.row + dr < b.minRow || bot.row + dr > b.maxRow
+					) outside = true;
+				}
+			}
+			if (outside) bot.dead = true;
+		}
+
+		this.render();
+
+		const aliveTypes = new Set(
+			this.bots.filter(bot => !bot.dead && bot.defIndex !== undefined).map(bot => bot.defIndex)
+		);
+		if (aliveTypes.size <= 1) this.endGame();
 	}
 
 	handleTournamentRoundEnd() {
@@ -578,6 +656,11 @@ class Game {
 	}
 
 	updateScores() {
+		if (this.gameMode === 2) {
+			this.updateBattleRoyaleScores();
+			return;
+		}
+
 		const scores = new Map();
 		for (let r = 0; r < ROWS; r++) {
 			for (let c = 0; c < COLS; c++) {
@@ -612,6 +695,47 @@ class Game {
 		}
 	}
 
+	updateBattleRoyaleScores() {
+		const allDefIndices = new Set(
+			this.bots.filter(b => b.defIndex !== undefined).map(b => b.defIndex)
+		);
+
+		const healthSums = new Map();
+		const healthCounts = new Map();
+		for (const bot of this.bots) {
+			if (!bot.dead && bot.defIndex !== undefined) {
+				healthSums.set(bot.defIndex, (healthSums.get(bot.defIndex) || 0) + (bot.health || 0));
+				healthCounts.set(bot.defIndex, (healthCounts.get(bot.defIndex) || 0) + 1);
+			}
+		}
+
+		const entries = [];
+		for (const defIdx of allDefIndices) {
+			const count = healthCounts.get(defIdx) || 0;
+			const avgHealth = count > 0 ? (healthSums.get(defIdx) || 0) / count : 0;
+			entries.push({ defIdx, avgHealth, alive: count > 0 });
+		}
+		entries.sort((a, b) => b.avgHealth - a.avgHealth);
+		const maxHealth = entries.length && entries[0].alive ? entries[0].avgHealth : 0;
+
+		const list = document.getElementById('score-list');
+		list.innerHTML = '';
+		for (const { defIdx, avgHealth, alive } of entries) {
+			const def = BOT_DEFS[defIdx];
+			if (!def) continue;
+			const collected = this.collectedPowerups.get(defIdx) || new Set();
+			const iconHtml = POWERUP_DEFS
+				.filter(p => collected.has(p.id))
+				.map(p => p.icon)
+				.join('');
+			const isLeader = alive && avgHealth > 0 && avgHealth === maxHealth;
+			const row = document.createElement('div');
+			row.className = 'score-item' + (isLeader ? ' score-leader' : '');
+			row.innerHTML = `<span class="bot-swatch" style="background:${def.color}"></span><span class="score-name">${def.name}</span>${iconHtml}<span class="score-value">${Math.round(avgHealth)}</span>${buildHealthBar(avgHealth)}`;
+			list.appendChild(row);
+		}
+	}
+
 	setSpeed(speedMs) {
 		this.currentSpeed = speedMs;
 		if (this.interval) {
@@ -619,6 +743,29 @@ class Game {
 			this.interval = setInterval(() => this.tick(), this.currentSpeed);
 		}
 	}
+}
+
+function buildHealthBar(health) {
+	const boxes = [];
+	if (health > 0) {
+		let cls = 'hb-green';
+		if (health <= 20) cls = 'hb-red hb-blink';
+		else if (health <= 30) cls = 'hb-yellow';
+		boxes.push(`<span class="health-box ${cls}"></span>`);
+	}
+	if (health > 40) {
+		let cls = 'hb-green';
+		if (health <= 50) cls = 'hb-red';
+		else if (health <= 60) cls = 'hb-yellow';
+		boxes.push(`<span class="health-box ${cls}"></span>`);
+	}
+	if (health > 70) {
+		let cls = 'hb-green';
+		if (health <= 80) cls = 'hb-red';
+		else if (health <= 90) cls = 'hb-yellow';
+		boxes.push(`<span class="health-box ${cls}"></span>`);
+	}
+	return `<span class="health-bar">${boxes.join('')}</span>`;
 }
 
 function buildBotPanel() {
