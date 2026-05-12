@@ -20,7 +20,7 @@ const BOT_DEFS = [
 	{ Class: ChaosBot,       name: 'Chaos',        color: '#ff8800', size: 1, ticksPerMove: 3 },
 	{ Class: LawnmowerBot,   name: 'Lawnmower',    color: '#44cc44', size: 1, ticksPerMove: 3 },
 	{ Class: GenghisBot,     name: 'Genghis',      color: '#cc2222', size: 1, ticksPerMove: 3 },
-	{ Class: BigBoyBot,      name: 'Big Boy',       color: '#ffdd00', size: 2, ticksPerMove: 6 },
+	{ Class: BigBoyBot,      name: 'Big Boy',       color: '#ffdd00', size: 2, ticksPerMove: 10 },
 	{ Class: HydraBot,       name: 'Hydra',        color: '#aa44ff', size: 1, ticksPerMove: 3 },
 	{ Class: ScoutBot,       name: 'Scout',        color: '#ff55cc', size: 1, ticksPerMove: 3, count: 3 },
 	{ Class: BishopBot,      name: 'Bishop',       color: '#00ccbb', size: 1, ticksPerMove: 3 },
@@ -263,6 +263,7 @@ class Game {
 		ROWS = boardSize.rows;
 		this.canvas.width  = COLS * CELL_SIZE;
 		this.canvas.height = ROWS * CELL_SIZE;
+		if (typeof scaleCanvas === 'function') scaleCanvas();
 
 		document.querySelectorAll('.speed-indicator').forEach(el => el.textContent = '');
 		this.collectedPowerups = new Map();
@@ -436,6 +437,7 @@ class Game {
 				const y = r * CELL_SIZE + 1;
 				if (
 					bot && bot.size === 2 &&
+					c === bot.col && r === bot.row &&
 					c + 1 < COLS && r + 1 < ROWS &&
 					this.cells[r][c + 1] === bot &&
 					this.cells[r + 1][c] === bot &&
@@ -961,11 +963,14 @@ function initDefaultSettings() {
 		if (cb) cb.checked = true;
 	});
 
-	const fireIdx = POWERUP_DEFS.findIndex(d => d.id === 'fire');
-	if (fireIdx >= 0) {
-		const cb = document.querySelector(`.powerup-checkbox[data-index="${fireIdx}"]`);
-		if (cb) cb.checked = false;
-	}
+	document.querySelectorAll('.powerup-checkbox').forEach(cb => cb.checked = false);
+	['speed', 'multiball'].forEach(id => {
+		const idx = POWERUP_DEFS.findIndex(d => d.id === id);
+		if (idx >= 0) {
+			const cb = document.querySelector(`.powerup-checkbox[data-index="${idx}"]`);
+			if (cb) cb.checked = true;
+		}
+	});
 
 	const glSlider = document.getElementById('game-length');
 	glSlider.value = 1;
@@ -976,6 +981,26 @@ function initDefaultSettings() {
 }
 
 initDefaultSettings();
+
+function scaleCanvas() {
+	const maxW = window.innerWidth * 0.94;
+	const scale = Math.min(1, maxW / canvas.width);
+	const transform = scale < 1 ? `scale(${scale})` : '';
+	canvas.style.transform = transform;
+	canvas.style.transformOrigin = 'top left';
+	const overlay = document.getElementById('powerup-overlay');
+	overlay.style.width  = canvas.width  + 'px';
+	overlay.style.height = canvas.height + 'px';
+	overlay.style.transform = transform;
+	overlay.style.transformOrigin = 'top left';
+	const wrap = canvas.parentElement;
+	wrap.style.width    = Math.round(canvas.width  * scale) + 'px';
+	wrap.style.height   = Math.round(canvas.height * scale) + 'px';
+	wrap.style.overflow = 'hidden';
+}
+
+scaleCanvas();
+window.addEventListener('resize', scaleCanvas);
 
 const speedSlider = document.getElementById('speed');
 const speedDisplay = document.getElementById('speed-display');
@@ -1036,6 +1061,7 @@ document.getElementById('modal-cancel').addEventListener('click', () => {
 
 document.getElementById('modal-ok').addEventListener('click', () => {
 	modalOverlay.classList.add('hidden');
+	game.start();
 });
 
 const whatOverlay = document.getElementById('what-overlay');
