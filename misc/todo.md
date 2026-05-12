@@ -12,22 +12,10 @@ Create a dedicated project-bootstrapping file (separate from project-methodology
 
 ---
 
-### Task 2: Revisit lawnmower bot
-
-Behavior still needs work — come back to this when there's a clearer idea of what it should do differently.
-
----
-
-### Task 3: Fix Hydra spawning
-
-Hydra isn't spawning replacement bots correctly. Investigate and fix.
-
-
----
-
-Othere tasks:
+Other tasks:
 
 a: bug where powerup icon shows up on settings panel not scoreboard
 b: lawnmower isn't working
 d: when big boy hits another bot's line 'half way', he gets off track
 e: when a bot has nowhere to go, it should die
+f: make drunken jezz ball change his speed every so often

@@ -34,7 +34,7 @@ After reading the files listed above, scan all remaining `.md` and `.txt` files 
 - Jason's shell is bash (not zsh), version 3.2.57 — the ancient Apple-bundled version. Do NOT use bash 4+ syntax in scripts: no `${var,,}` or `${var^^}` for case conversion (use `tr` instead), no associative arrays, no `mapfile`. Stick to POSIX-compatible bash 3 syntax.
 
 ## About the user
-See relationship-context.md for personal context about Jason.
+See misc/relationship-context.md for personal context about Jason.
 
 ## Project directory
 `/Users/jason/Documents/code/claude/land-grab-sim`
