@@ -145,8 +145,8 @@ class Game {
 
 		document.getElementById('tournament-overlay').classList.add('hidden');
 
-		const modeSlider = document.getElementById('game-mode');
-		const newMode = modeSlider ? parseInt(modeSlider.value, 10) : 0;
+		const modeRadio = document.querySelector('input[name="game-mode"]:checked');
+		const newMode = modeRadio ? parseInt(modeRadio.value, 10) : 0;
 		const shouldReset = resetTournament || newMode !== this.gameMode;
 		this.gameMode = newMode;
 
@@ -165,8 +165,8 @@ class Game {
 			scorePanelTitle.textContent = this.gameMode === 1 ? `round ${this.tournamentRound}` : 'Scores';
 		}
 
-		const boardSizeSlider = document.getElementById('board-size');
-		const boardSize = BOARD_SIZES[boardSizeSlider ? parseInt(boardSizeSlider.value, 10) : 0];
+		const boardSizeRadio = document.querySelector('input[name="board-size"]:checked');
+		const boardSize = BOARD_SIZES[boardSizeRadio ? parseInt(boardSizeRadio.value, 10) : 0];
 		COLS = boardSize.cols;
 		ROWS = boardSize.rows;
 		this.canvas.width  = COLS * CELL_SIZE;
@@ -677,9 +677,8 @@ function initDefaultSettings() {
 	glSlider.value = 1;
 	document.getElementById('game-length-display').textContent = GAME_LENGTH_LABELS[1];
 
-	const bsSlider = document.getElementById('board-size');
-	bsSlider.value = 1;
-	document.getElementById('board-size-display').textContent = BOARD_SIZES[1].label;
+	const bsRadio = document.querySelector('input[name="board-size"][value="1"]');
+	if (bsRadio) bsRadio.checked = true;
 }
 
 initDefaultSettings();
@@ -701,8 +700,8 @@ function snapshotSettings() {
 		powerups: Array.from(document.querySelectorAll('.powerup-checkbox')).map(cb => cb.checked),
 		powerupCount: document.getElementById('powerup-count').value,
 		gameLength: document.getElementById('game-length').value,
-		gameMode: document.getElementById('game-mode').value,
-		boardSize: document.getElementById('board-size').value,
+		gameMode: document.querySelector('input[name="game-mode"]:checked')?.value ?? '0',
+		boardSize: document.querySelector('input[name="board-size"]:checked')?.value ?? '0',
 	};
 }
 
@@ -715,12 +714,10 @@ function restoreSettings(snapshot) {
 	const glSlider = document.getElementById('game-length');
 	glSlider.value = snapshot.gameLength;
 	document.getElementById('game-length-display').textContent = GAME_LENGTH_LABELS[snapshot.gameLength];
-	const gmSlider = document.getElementById('game-mode');
-	gmSlider.value = snapshot.gameMode;
-	document.getElementById('game-mode-display').textContent = MODE_LABELS[snapshot.gameMode];
-	const bsSlider = document.getElementById('board-size');
-	bsSlider.value = snapshot.boardSize;
-	document.getElementById('board-size-display').textContent = BOARD_SIZES[snapshot.boardSize].label;
+	const gmRadio = document.querySelector(`input[name="game-mode"][value="${snapshot.gameMode}"]`);
+	if (gmRadio) gmRadio.checked = true;
+	const bsRadio = document.querySelector(`input[name="board-size"][value="${snapshot.boardSize}"]`);
+	if (bsRadio) bsRadio.checked = true;
 }
 
 let settingsSnapshot = null;
@@ -765,18 +762,6 @@ const gameLengthSlider = document.getElementById('game-length');
 const gameLengthDisplay = document.getElementById('game-length-display');
 gameLengthSlider.addEventListener('input', () => {
 	gameLengthDisplay.textContent = GAME_LENGTH_LABELS[parseInt(gameLengthSlider.value, 10)];
-});
-
-const gameModeSlider = document.getElementById('game-mode');
-const gameModeDisplay = document.getElementById('game-mode-display');
-gameModeSlider.addEventListener('input', () => {
-	gameModeDisplay.textContent = MODE_LABELS[parseInt(gameModeSlider.value, 10)];
-});
-
-const boardSizeSlider = document.getElementById('board-size');
-const boardSizeDisplay = document.getElementById('board-size-display');
-boardSizeSlider.addEventListener('input', () => {
-	boardSizeDisplay.textContent = BOARD_SIZES[parseInt(boardSizeSlider.value, 10)].label;
 });
 
 game.start();

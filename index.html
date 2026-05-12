@@ -39,8 +39,20 @@
 			<div class="modal-title">Settings</div>
 			<div class="modal-mode-row">
 				<span class="modal-mode-label">Mode</span>
-				<input type="range" id="game-mode" min="0" max="2" value="0" step="1">
-				<span id="game-mode-display">boring</span>
+				<div class="mode-radio-group">
+					<label class="mode-radio-item">
+						<input type="radio" name="game-mode" value="0" checked>
+						<span>boring</span>
+					</label>
+					<label class="mode-radio-item">
+						<input type="radio" name="game-mode" value="1">
+						<span>tournament</span>
+					</label>
+					<label class="mode-radio-item">
+						<input type="radio" name="game-mode" value="2">
+						<span>battle royale</span>
+					</label>
+				</div>
 			</div>
 			<div class="modal-columns">
 				<div class="modal-section">
@@ -63,10 +75,22 @@
 					<input type="range" id="game-length" min="0" max="4" value="0" step="1">
 					<span id="game-length-display">30s</span>
 				</div>
-				<div class="modal-slider-half modal-slider-half-right">
+				<div class="modal-slider-half modal-slider-half-right modal-slider-half-col">
 					<span class="modal-slider-label">Board Size</span>
-					<input type="range" id="board-size" min="0" max="2" value="0" step="1">
-					<span id="board-size-display">large</span>
+					<div class="mode-radio-group mode-radio-group-col">
+						<label class="mode-radio-item">
+							<input type="radio" name="board-size" value="0" checked>
+							<span>large</span>
+						</label>
+						<label class="mode-radio-item">
+							<input type="radio" name="board-size" value="1">
+							<span>medium</span>
+						</label>
+						<label class="mode-radio-item">
+							<input type="radio" name="board-size" value="2">
+							<span>to the death!</span>
+						</label>
+					</div>
 				</div>
 			</div>
 			<div class="modal-actions">

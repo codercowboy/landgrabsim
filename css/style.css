@@ -490,17 +490,40 @@ input[type=range]::-webkit-slider-thumb {
 	white-space: nowrap;
 }
 
-#game-mode {
+.mode-radio-group {
+	display: flex;
+	gap: 20px;
 	flex: 1;
+}
+
+.mode-radio-group-col {
+	flex-direction: column;
+	gap: 6px;
+}
+
+.modal-slider-half-col {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.mode-radio-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	font-size: 0.82em;
+	color: #666666;
+	user-select: none;
+}
+
+.mode-radio-item input[type="radio"] {
 	cursor: pointer;
 	accent-color: #4488ff;
 }
 
-#game-mode-display {
-	font-size: 0.82em;
-	color: #aaaaaa;
-	min-width: 80px;
-	text-align: right;
+.mode-radio-item input[type="radio"]:checked + span {
+	color: #ffffff;
 }
 
 .modal-row-pair {
@@ -543,18 +566,6 @@ input[type=range]::-webkit-slider-thumb {
 	text-align: right;
 }
 
-#board-size {
-	flex: 1;
-	cursor: pointer;
-	accent-color: #4488ff;
-}
-
-#board-size-display {
-	font-size: 0.82em;
-	color: #aaaaaa;
-	min-width: 82px;
-	text-align: right;
-}
 
 .modal-btn {
 	padding: 7px 22px;
