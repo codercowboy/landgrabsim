@@ -45,9 +45,14 @@ const POWERUP_DEFS = [
 		color: '#ffaa00',
 		icon: '<span class="pu-icon pu-multiball">🎱</span>',
 		apply(bot) {
+			const game = bot.game;
+			if (bot instanceof HydraBot) {
+				game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color);
+				game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color);
+				return;
+			}
 			const def = BOT_DEFS[bot.defIndex];
 			if (!def) return;
-			const game = bot.game;
 			const newBot = new def.Class(game, bot.col, bot.row, bot.color);
 			newBot.defIndex = bot.defIndex;
 			newBot.movesSinceNewLand = 0;
@@ -69,6 +74,12 @@ const POWERUP_DEFS = [
 		color: '#ff0000',
 		icon: '<span class="pu-icon pu-death">✕</span>',
 		apply(bot) {
+			if (bot instanceof HydraBot) {
+				for (let i = 0; i < 5; i++) {
+					bot.game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color);
+				}
+				return;
+			}
 			bot.dead = true;
 			for (const mate of (bot.teammates || [])) mate.dead = true;
 		},
