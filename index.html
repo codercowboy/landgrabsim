@@ -57,10 +57,17 @@
 					<div id="powerup-list"></div>
 				</div>
 			</div>
-			<div class="modal-length-row">
-				<span class="modal-length-label">Game Length</span>
-				<input type="range" id="game-length" min="0" max="4" value="0" step="1">
-				<span id="game-length-display">30s</span>
+			<div class="modal-row-pair">
+				<div class="modal-slider-half">
+					<span class="modal-slider-label">Game Length</span>
+					<input type="range" id="game-length" min="0" max="4" value="0" step="1">
+					<span id="game-length-display">30s</span>
+				</div>
+				<div class="modal-slider-half modal-slider-half-right">
+					<span class="modal-slider-label">Board Size</span>
+					<input type="range" id="board-size" min="0" max="2" value="0" step="1">
+					<span id="board-size-display">large</span>
+				</div>
 			</div>
 			<div class="modal-actions">
 				<button class="modal-btn" id="modal-cancel">Cancel</button>

@@ -484,15 +484,26 @@ h1 {
 	text-align: right;
 }
 
-.modal-length-row {
+.modal-row-pair {
 	display: flex;
-	align-items: center;
-	gap: 12px;
+	gap: 0;
 	padding: 14px 0 2px;
 	border-top: 1px solid #333333;
 }
 
-.modal-length-label {
+.modal-slider-half {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.modal-slider-half-right {
+	padding-left: 20px;
+	border-left: 1px solid #333333;
+}
+
+.modal-slider-label {
 	font-size: 0.72em;
 	text-transform: uppercase;
 	letter-spacing: 0.1em;
@@ -510,6 +521,19 @@ h1 {
 	font-size: 0.82em;
 	color: #aaaaaa;
 	min-width: 28px;
+	text-align: right;
+}
+
+#board-size {
+	flex: 1;
+	cursor: pointer;
+	accent-color: #4488ff;
+}
+
+#board-size-display {
+	font-size: 0.82em;
+	color: #aaaaaa;
+	min-width: 82px;
 	text-align: right;
 }
 

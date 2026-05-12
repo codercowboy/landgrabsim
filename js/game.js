@@ -1,6 +1,12 @@
-const COLS = 100;
-const ROWS = 50;
+let COLS = 100;
+let ROWS = 50;
 const CELL_SIZE = 10;
+
+const BOARD_SIZES = [
+	{ cols: 100, rows: 50, label: 'large' },
+	{ cols: 50,  rows: 50, label: 'medium' },
+	{ cols: 25,  rows: 25, label: 'to the death!' },
+];
 
 const SPEEDS = [1000, 100, 15, 5, 1];
 const SPEED_LABELS = ['Is this thing on?', 'Yawn', 'Normal', 'Fast', "Don't blink!"];
@@ -130,6 +136,13 @@ class Game {
 			clearTimeout(this.gameTimeout);
 			this.gameTimeout = null;
 		}
+
+		const boardSizeSlider = document.getElementById('board-size');
+		const boardSize = BOARD_SIZES[boardSizeSlider ? parseInt(boardSizeSlider.value, 10) : 0];
+		COLS = boardSize.cols;
+		ROWS = boardSize.rows;
+		this.canvas.width  = COLS * CELL_SIZE;
+		this.canvas.height = ROWS * CELL_SIZE;
 
 		document.querySelectorAll('.speed-indicator').forEach(el => el.textContent = '');
 		this.collectedPowerups = new Map();
@@ -515,6 +528,7 @@ function snapshotSettings() {
 		powerupCount: document.getElementById('powerup-count').value,
 		gameLength: document.getElementById('game-length').value,
 		gameMode: document.getElementById('game-mode').value,
+		boardSize: document.getElementById('board-size').value,
 	};
 }
 
@@ -530,6 +544,9 @@ function restoreSettings(snapshot) {
 	const gmSlider = document.getElementById('game-mode');
 	gmSlider.value = snapshot.gameMode;
 	document.getElementById('game-mode-display').textContent = MODE_LABELS[snapshot.gameMode];
+	const bsSlider = document.getElementById('board-size');
+	bsSlider.value = snapshot.boardSize;
+	document.getElementById('board-size-display').textContent = BOARD_SIZES[snapshot.boardSize].label;
 }
 
 let settingsSnapshot = null;
@@ -576,6 +593,12 @@ const gameModeSlider = document.getElementById('game-mode');
 const gameModeDisplay = document.getElementById('game-mode-display');
 gameModeSlider.addEventListener('input', () => {
 	gameModeDisplay.textContent = MODE_LABELS[parseInt(gameModeSlider.value, 10)];
+});
+
+const boardSizeSlider = document.getElementById('board-size');
+const boardSizeDisplay = document.getElementById('board-size-display');
+boardSizeSlider.addEventListener('input', () => {
+	boardSizeDisplay.textContent = BOARD_SIZES[parseInt(boardSizeSlider.value, 10)].label;
 });
 
 game.start();
