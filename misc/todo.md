@@ -29,5 +29,5 @@ Othere tasks:
 
 a: bug where powerup icon shows up on settings panel not scoreboard
 b: lawnmower isn't working
-c: hydra isn't working
 d: when big boy hits another bot's line 'half way', he gets off track
+e: when a bot has nowhere to go, it should die

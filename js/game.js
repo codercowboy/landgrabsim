@@ -519,7 +519,7 @@ speedSlider.addEventListener('input', () => {
 	game.setSpeed(SPEEDS[idx]);
 });
 
-const modalOverlay = document.getElementById('modal-overlay');
+const modalOverlay = document.getElementById('settings-overlay');
 
 function snapshotSettings() {
 	return {

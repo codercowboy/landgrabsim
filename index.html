@@ -34,7 +34,7 @@
 		</aside>
 	</div>
 
-	<div id="modal-overlay" class="modal-overlay hidden">
+	<div id="settings-overlay" class="modal-overlay hidden">
 		<div class="modal-panel">
 			<div class="modal-title">Settings</div>
 			<div class="modal-mode-row">
@@ -80,8 +80,7 @@
 		<div class="modal-panel modal-panel-narrow">
 			<div class="modal-title">what is this?</div>
 			<div class="what-body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
-				<p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+				<div id="aboutContent"></div>				
 			</div>
 			<div class="modal-actions">
 				<button class="modal-btn modal-btn-start" id="what-ok">ok, i guess?</button>
@@ -99,5 +98,21 @@
 	<script src="js/bots/bishop.js"></script>
 	<script src="js/bots/drunk-jezzball.js"></script>
 	<script src="js/game.js"></script>
+
+	<script>		
+		fetch('about.html')
+			.then(response => response.text())
+			.then(data => {
+				document.querySelector('#aboutContent').outerHTML = data;
+			}
+		);
+
+		const ranges = document.querySelectorAll('input[type="range"]');
+		ranges.forEach(item => {
+			item.addEventListener('click', (event) => {
+				event.stopPropagation();
+			});
+		});
+	</script>
 </body>
 </html>
