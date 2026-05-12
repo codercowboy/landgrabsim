@@ -27,7 +27,9 @@ class ScoutBot {
 				this.health -= 5;
 				if (this.health <= 0) {
 					this.health = 0;
-					this.dead = true;
+					for (const b of this.game.bots) {
+						if (b.defIndex === this.defIndex) b.dead = true;
+					}
 				}
 			}
 		}

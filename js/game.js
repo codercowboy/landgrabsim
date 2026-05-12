@@ -130,6 +130,8 @@ class Game {
 		this.activeBounds = null;
 		this.shrinkInterval = null;
 		this.damagedThisTick = new Set();
+		this.brWinnerDefIndex = null;
+		this.shimmerFrame = null;
 	}
 
 	start(resetTournament = true) {
@@ -149,6 +151,11 @@ class Game {
 			clearInterval(this.shrinkInterval);
 			this.shrinkInterval = null;
 		}
+		if (this.shimmerFrame) {
+			cancelAnimationFrame(this.shimmerFrame);
+			this.shimmerFrame = null;
+		}
+		this.brWinnerDefIndex = null;
 
 		document.getElementById('tournament-overlay').classList.add('hidden');
 
@@ -321,6 +328,11 @@ class Game {
 					bot.moveCooldown = 0;
 					if (!bot.makeMove()) {
 						bot.dead = true;
+						if (this.gameMode === 2) {
+							for (const b of this.bots) {
+								if (b.defIndex === bot.defIndex) b.dead = true;
+							}
+						}
 					}
 				}
 			}
@@ -398,6 +410,14 @@ class Game {
 			ctx.moveTo(x + w - 1, y + 1);
 			ctx.lineTo(x + 1, y + h - 1);
 			ctx.stroke();
+		} else if (this.brWinnerDefIndex !== null && bot.defIndex === this.brWinnerDefIndex) {
+			const t = (Math.sin(Date.now() / 400) + 1) / 2;
+			const g = Math.round(255 - t * 40);
+			const b = Math.round(255 * (1 - t));
+			ctx.fillStyle = `rgb(255,${g},${b})`;
+			ctx.fillRect(x, y, w, h);
+			ctx.fillStyle = bot.color;
+			ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
 		} else if (bot.onFire) {
 			const t = (Math.sin(Date.now() / 150) + 1) / 2;
 			const g = Math.round(t * 255);
@@ -428,7 +448,9 @@ class Game {
 				bot.health -= 5;
 				if (bot.health <= 0) {
 					bot.health = 0;
-					bot.dead = true;
+					for (const b of this.bots) {
+						if (b.defIndex === bot.defIndex) b.dead = true;
+					}
 				}
 			}
 			return false;
@@ -475,8 +497,26 @@ class Game {
 		}
 		clearInterval(this.clockInterval);
 		this.clockInterval = null;
-		for (const bot of this.bots) bot.dead = true;
+		if (this.gameMode === 2) {
+			const winnerTypes = [...new Set(
+				this.bots.filter(b => !b.dead && b.defIndex !== undefined).map(b => b.defIndex)
+			)];
+			this.brWinnerDefIndex = winnerTypes.length === 1 ? winnerTypes[0] : null;
+			for (const bot of this.bots) {
+				if (bot.defIndex !== this.brWinnerDefIndex) bot.dead = true;
+			}
+		} else {
+			for (const bot of this.bots) bot.dead = true;
+		}
 		this.render();
+		if (this.brWinnerDefIndex !== null) {
+			const shimmer = () => {
+				if (this.interval) return;
+				this.render();
+				this.shimmerFrame = requestAnimationFrame(shimmer);
+			};
+			this.shimmerFrame = requestAnimationFrame(shimmer);
+		}
 
 		if (this.gameMode === 1) {
 			this.handleTournamentRoundEnd();
@@ -501,6 +541,7 @@ class Game {
 		b.minRow++;
 		b.maxRow--;
 
+		const perimeterKilled = new Set();
 		for (const bot of this.bots) {
 			if (bot.dead) continue;
 			const s = bot.size || 1;
@@ -513,7 +554,10 @@ class Game {
 					) outside = true;
 				}
 			}
-			if (outside) bot.dead = true;
+			if (outside) perimeterKilled.add(bot.defIndex);
+		}
+		for (const bot of this.bots) {
+			if (perimeterKilled.has(bot.defIndex)) bot.dead = true;
 		}
 
 		this.render();
