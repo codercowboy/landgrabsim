@@ -19,8 +19,8 @@ class HydraBot {
 				return true;
 			}
 		}
-		this.game.spawnMidGame(HydraBot, this.col, this.row, this.color);
-		this.game.spawnMidGame(HydraBot, this.col, this.row, this.color);
+		this.game.spawnMidGame(HydraBot, this.col, this.row, this.color, this.health);
+		this.game.spawnMidGame(HydraBot, this.col, this.row, this.color, this.health);
 		return false;
 	}
 }

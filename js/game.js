@@ -35,9 +35,9 @@ const POWERUP_DEFS = [
 		icon: '<span class="pu-icon pu-speed">▲</span>',
 		count: 1,
 		apply(bot) {
-			bot.ticksPerMove = 5;
+			bot.ticksPerMove = 1;
 			if (bot.teammates) {
-				for (const mate of bot.teammates) mate.ticksPerMove = 5;
+				for (const mate of bot.teammates) mate.ticksPerMove = 1;
 			}
 			if (bot.defIndex !== undefined) {
 				const el = document.getElementById(`speed-indicator-${bot.defIndex}`);
@@ -53,8 +53,8 @@ const POWERUP_DEFS = [
 		apply(bot) {
 			const game = bot.game;
 			if (bot instanceof HydraBot) {
-				game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color);
-				game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color);
+				game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color, bot.health);
+				game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color, bot.health);
 				return;
 			}
 			const def = BOT_DEFS[bot.defIndex];
@@ -64,6 +64,7 @@ const POWERUP_DEFS = [
 			newBot.movesSinceNewLand = 0;
 			newBot.ticksPerMove = bot.ticksPerMove;
 			newBot.moveCooldown = 0;
+			if (game.gameMode === 2) newBot.health = bot.health;
 			const team = [bot, ...(bot.teammates || [])];
 			newBot.teammates = [...team];
 			for (const member of team) {
@@ -82,7 +83,7 @@ const POWERUP_DEFS = [
 		apply(bot) {
 			if (bot instanceof HydraBot) {
 				for (let i = 0; i < 5; i++) {
-					bot.game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color);
+					bot.game.spawnMidGame(HydraBot, bot.col, bot.row, bot.color, bot.health);
 				}
 				return;
 			}
@@ -332,6 +333,7 @@ class Game {
 							for (const b of this.bots) {
 								if (b.defIndex === bot.defIndex) b.dead = true;
 							}
+							this.clearDefIndexCells(bot.defIndex);
 						}
 					}
 				}
@@ -383,6 +385,7 @@ class Game {
 		}
 
 		for (const bot of this.bots) {
+			if (this.gameMode === 2 && bot.dead) continue;
 			this.drawBot(bot);
 		}
 
@@ -442,7 +445,8 @@ class Game {
 		}
 		if (bot.onFire) return true;
 		const cell = this.cells[row][col];
-		if (this.gameMode === 2 && cell !== null && cell !== bot && !cell.dead) {
+		const sameType = cell !== null && cell.defIndex !== undefined && cell.defIndex === bot.defIndex;
+		if (this.gameMode === 2 && cell !== null && cell !== bot && !cell.dead && !sameType) {
 			if (!this.damagedThisTick.has(bot)) {
 				this.damagedThisTick.add(bot);
 				bot.health -= 5;
@@ -451,11 +455,22 @@ class Game {
 					for (const b of this.bots) {
 						if (b.defIndex === bot.defIndex) b.dead = true;
 					}
+					this.clearDefIndexCells(bot.defIndex);
 				}
 			}
 			return false;
 		}
-		return cell === null || cell === bot;
+		return cell === null || cell === bot || sameType || (this.gameMode === 2 && cell !== null && cell.dead);
+	}
+
+	clearDefIndexCells(defIndex) {
+		for (let r = 0; r < ROWS; r++) {
+			for (let c = 0; c < COLS; c++) {
+				if (this.cells[r][c] !== null && this.cells[r][c].defIndex === defIndex) {
+					this.cells[r][c] = null;
+				}
+			}
+		}
 	}
 
 	moveBotTo(bot, col, row) {
@@ -471,13 +486,13 @@ class Game {
 		this.cells[row][col] = bot;
 	}
 
-	spawnMidGame(Class, col, row, color) {
+	spawnMidGame(Class, col, row, color, health = 100) {
 		const bot = new Class(this, col, row, color);
 		bot.defIndex = BOT_DEFS.findIndex(d => d.Class === Class);
 		bot.movesSinceNewLand = 0;
 		bot.ticksPerMove = 20;
 		bot.moveCooldown = 0;
-		if (this.gameMode === 2) bot.health = 100;
+		if (this.gameMode === 2) bot.health = health;
 		this.cells[row][col] = bot;
 		this.bots.push(bot);
 	}
@@ -502,8 +517,15 @@ class Game {
 				this.bots.filter(b => !b.dead && b.defIndex !== undefined).map(b => b.defIndex)
 			)];
 			this.brWinnerDefIndex = winnerTypes.length === 1 ? winnerTypes[0] : null;
+			const loserDefIndexes = new Set();
 			for (const bot of this.bots) {
-				if (bot.defIndex !== this.brWinnerDefIndex) bot.dead = true;
+				if (bot.defIndex !== this.brWinnerDefIndex) {
+					bot.dead = true;
+					loserDefIndexes.add(bot.defIndex);
+				}
+			}
+			for (const defIndex of loserDefIndexes) {
+				this.clearDefIndexCells(defIndex);
 			}
 		} else {
 			for (const bot of this.bots) bot.dead = true;
@@ -558,6 +580,9 @@ class Game {
 		}
 		for (const bot of this.bots) {
 			if (perimeterKilled.has(bot.defIndex)) bot.dead = true;
+		}
+		for (const defIndex of perimeterKilled) {
+			this.clearDefIndexCells(defIndex);
 		}
 
 		this.render();
