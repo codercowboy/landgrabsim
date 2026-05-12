@@ -14,7 +14,7 @@ const BOT_DEFS = [
 	{ Class: HydraBot,       name: 'Hydra',        color: '#aa44ff', size: 1, ticksPerMove: 10 },
 	{ Class: ScoutBot,       name: 'Scout',        color: '#ff55cc', size: 1, ticksPerMove: 30, count: 3 },
 	{ Class: BishopBot,      name: 'Bishop',       color: '#00ccbb', size: 1, ticksPerMove: 10 },
-	{ Class: DrunkJezzballBot, name: 'Drunk Jezzball', color: '#ff6644', size: 1, ticksPerMove: 10, count: 2 },
+	{ Class: DrunkJezzballBot, name: 'Drunk Jezzball', color: '#ff6644', size: 1, ticksPerMove: 20, count: 2 },
 ];
 
 const POWERUP_DEFS = [
@@ -32,6 +32,38 @@ const POWERUP_DEFS = [
 				const el = document.getElementById(`speed-indicator-${bot.defIndex}`);
 				if (el) el.textContent = '▲';
 			}
+		},
+	},
+	{
+		id: 'multiball',
+		name: 'Multiball',
+		color: '#ffaa00',
+		apply(bot) {
+			const def = BOT_DEFS[bot.defIndex];
+			if (!def) return;
+			const game = bot.game;
+			const newBot = new def.Class(game, bot.col, bot.row, bot.color);
+			newBot.defIndex = bot.defIndex;
+			newBot.movesSinceNewLand = 0;
+			newBot.ticksPerMove = bot.ticksPerMove;
+			newBot.moveCooldown = 0;
+			const team = [bot, ...(bot.teammates || [])];
+			newBot.teammates = [...team];
+			for (const member of team) {
+				if (!member.teammates) member.teammates = [];
+				member.teammates.push(newBot);
+			}
+			game.cells[bot.row][bot.col] = newBot;
+			game.bots.push(newBot);
+		},
+	},
+	{
+		id: 'instant-death',
+		name: 'instant death!!!',
+		color: '#ff0000',
+		apply(bot) {
+			bot.dead = true;
+			for (const mate of (bot.teammates || [])) mate.dead = true;
 		},
 	},
 ];
@@ -137,30 +169,33 @@ class Game {
 		overlay.innerHTML = '';
 
 		const countSlider = document.getElementById('powerup-count');
-		const powerupCount = countSlider ? parseInt(countSlider.value, 10) : 3;
+		const totalCount = countSlider ? parseInt(countSlider.value, 10) : 3;
 
-		POWERUP_DEFS.forEach((def, i) => {
+		const enabledDefs = POWERUP_DEFS.filter((_, i) => {
 			const cb = document.querySelector(`.powerup-checkbox[data-index="${i}"]`);
-			if (cb && !cb.checked) return;
-			let placed = 0;
-			let attempts = 0;
-			while (placed < powerupCount && attempts < 10000) {
-				attempts++;
-				const c = Math.floor(Math.random() * COLS);
-				const r = Math.floor(Math.random() * ROWS);
-				const key = `${c},${r}`;
-				if (this.cells[r][c] === null && !this.powerups.has(key)) {
-					this.powerups.set(key, def);
-					const el = document.createElement('div');
-					el.className = 'powerup-block';
-					el.style.left = (c * CELL_SIZE + 1) + 'px';
-					el.style.top  = (r * CELL_SIZE + 1) + 'px';
-					overlay.appendChild(el);
-					this.powerupElements.set(key, el);
-					placed++;
-				}
-			}
+			return cb ? cb.checked : true;
 		});
+		if (enabledDefs.length === 0) return;
+
+		let placed = 0;
+		let attempts = 0;
+		while (placed < totalCount && attempts < 10000) {
+			attempts++;
+			const c = Math.floor(Math.random() * COLS);
+			const r = Math.floor(Math.random() * ROWS);
+			const key = `${c},${r}`;
+			if (this.cells[r][c] === null && !this.powerups.has(key)) {
+				const def = enabledDefs[Math.floor(Math.random() * enabledDefs.length)];
+				this.powerups.set(key, def);
+				const el = document.createElement('div');
+				el.className = `powerup-block powerup-${def.id}`;
+				el.style.left = (c * CELL_SIZE + 1) + 'px';
+				el.style.top  = (r * CELL_SIZE + 1) + 'px';
+				overlay.appendChild(el);
+				this.powerupElements.set(key, el);
+				placed++;
+			}
+		}
 	}
 
 	collectPowerup(bot, key) {

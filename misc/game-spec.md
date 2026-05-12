@@ -65,8 +65,9 @@ When all bots are dead, the game ends immediately (even before the 30-second clo
 
 - Powerups are placed on random unclaimed cells at the start of each game.
 - A bot collects a powerup by moving onto its cell.
-- Currently one powerup type:
+- Currently two powerup types:
   - **Speed Boost**: sets the collecting bot's `ticksPerMove` to 5 (faster movement). If the bot has teammates, all teammates receive the same speed boost. A visual indicator (▲) appears next to the bot's name in the panel.
+  - **Multiball**: spawns one new bot of the same type at the collecting bot's current position. The new bot inherits the collector's current speed and joins its teammates network. Only one new bot is spawned regardless of team size.
 - Powerup count and enabled state are configurable per powerup via the Powerups panel.
 
 ---
