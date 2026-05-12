@@ -510,6 +510,35 @@ const game = new Game(canvas);
 buildBotPanel();
 buildPowerupPanel();
 
+function initDefaultSettings() {
+	document.querySelectorAll('.bot-checkbox').forEach(cb => cb.checked = false);
+	const indices = BOT_DEFS.map((_, i) => i);
+	for (let i = indices.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[indices[i], indices[j]] = [indices[j], indices[i]];
+	}
+	indices.slice(0, 5).forEach(i => {
+		const cb = document.querySelector(`.bot-checkbox[data-index="${i}"]`);
+		if (cb) cb.checked = true;
+	});
+
+	const fireIdx = POWERUP_DEFS.findIndex(d => d.id === 'fire');
+	if (fireIdx >= 0) {
+		const cb = document.querySelector(`.powerup-checkbox[data-index="${fireIdx}"]`);
+		if (cb) cb.checked = false;
+	}
+
+	const glSlider = document.getElementById('game-length');
+	glSlider.value = 1;
+	document.getElementById('game-length-display').textContent = GAME_LENGTH_LABELS[1];
+
+	const bsSlider = document.getElementById('board-size');
+	bsSlider.value = 1;
+	document.getElementById('board-size-display').textContent = BOARD_SIZES[1].label;
+}
+
+initDefaultSettings();
+
 const speedSlider = document.getElementById('speed');
 const speedDisplay = document.getElementById('speed-display');
 
