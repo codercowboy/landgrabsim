@@ -26,6 +26,20 @@ h1 {
 	font-style: italic;
 }
 
+.main-layout {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	gap: 20px;
+}
+
+.game-column {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+}
+
 #grid {
 	display: block;
 	background: #222222;
@@ -74,4 +88,80 @@ h1 {
 	background: #333333;
 	border-color: #4488ff;
 	color: #ffffff;
+}
+
+/* Bot panel */
+
+.bot-panel {
+	background: #222222;
+	border: 1px solid #383838;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 160px;
+	position: sticky;
+	top: 24px;
+}
+
+.bot-panel-title {
+	font-size: 0.7em;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: #666666;
+	padding-bottom: 10px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid #333333;
+}
+
+.bot-item {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 5px 0;
+	cursor: pointer;
+	user-select: none;
+}
+
+.bot-item:hover .bot-name {
+	color: #ffffff;
+}
+
+.bot-swatch {
+	width: 10px;
+	height: 10px;
+	flex-shrink: 0;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.bot-name {
+	flex: 1;
+	font-size: 0.82em;
+	color: #bbbbbb;
+	transition: color 0.1s;
+}
+
+.bot-item input[type="checkbox"] {
+	cursor: pointer;
+	width: 13px;
+	height: 13px;
+	accent-color: #4488ff;
+	flex-shrink: 0;
+	order: 3;
+}
+
+.bot-swatch {
+	order: 1;
+}
+
+.bot-name {
+	order: 2;
+}
+
+.bot-item input[type="checkbox"]:not(:checked) ~ .bot-swatch {
+	opacity: 0.3;
+}
+
+.bot-item input[type="checkbox"]:not(:checked) ~ .bot-name {
+	color: #444444;
 }

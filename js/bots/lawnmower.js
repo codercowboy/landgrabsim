@@ -14,13 +14,31 @@ class LawnmowerBot {
 		this.dirIndex = Math.floor(Math.random() * 4);
 	}
 
+	isOwnCell(col, row) {
+		return this.game.cells[row] && this.game.cells[row][col] === this;
+	}
+
 	makeMove() {
 		for (let i = 0; i < 4; i++) {
 			const [dc, dr] = this.dirs[this.dirIndex];
-			if (this.game.canMoveTo(this.col + dc, this.row + dr, this)) {
-				this.game.moveBotTo(this, this.col + dc, this.row + dr);
-				return true;
+			const nextCol = this.col + dc;
+			const nextRow = this.row + dr;
+
+			if (this.game.canMoveTo(nextCol, nextRow, this)) {
+				if (this.isOwnCell(nextCol, nextRow)) {
+					const oppIndex = (this.dirIndex + 2) % 4;
+					const [odc, odr] = this.dirs[oppIndex];
+					if (this.game.canMoveTo(this.col + odc, this.row + odr, this)) {
+						this.dirIndex = oppIndex;
+						this.game.moveBotTo(this, this.col + odc, this.row + odr);
+						return true;
+					}
+				} else {
+					this.game.moveBotTo(this, nextCol, nextRow);
+					return true;
+				}
 			}
+
 			this.dirIndex = (this.dirIndex + 1) % 4;
 		}
 		return false;

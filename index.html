@@ -7,17 +7,28 @@
 </head>
 <body>
 	<h1>Jason's Game Of Life <span class="subtitle">aka Land Grab Simulator</span></h1>
-	<canvas id="grid"></canvas>
-	<div class="controls">
-		<div class="speed-control">
-			<label for="speed">Speed:</label>
-			<span class="speed-label">Slow</span>
-			<input type="range" id="speed" min="0" max="10" value="10">
-			<span class="speed-label">Fast</span>
-			<span id="speed-display">1s</span>
+	<div class="main-layout">
+		<div class="game-column">
+			<canvas id="grid"></canvas>
+			<div class="controls">
+				<div class="speed-control">
+					<label for="speed">Speed:</label>
+					<span class="speed-label">Slow</span>
+					<input type="range" id="speed" min="0" max="10" value="10">
+					<span class="speed-label">Fast</span>
+					<span id="speed-display">1s</span>
+				</div>
+				<button id="run-again">Run Again</button>
+			</div>
 		</div>
-		<button id="run-again">Run Again</button>
+		<aside class="bot-panel">
+			<div class="bot-panel-title">Bots</div>
+			<div id="bot-list"></div>
+		</aside>
 	</div>
+	<script src="js/bots/genghis.js"></script>
+	<script src="js/bots/big-boy.js"></script>
+	<script src="js/bots/hydra.js"></script>
 	<script src="js/bots/lawnmower.js"></script>
 	<script src="js/bots/airport-line.js"></script>
 	<script src="js/bots/chaos.js"></script>
