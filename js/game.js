@@ -121,9 +121,15 @@ class Game {
 		this.gameStartTime = null;
 		this.gameDuration = GAME_LENGTHS[0];
 		this.currentSpeed = SPEEDS[2];
+		this.gameMode = 0;
+		this.tournamentWins = new Map();
+		this.tournamentCumScore = new Map();
+		this.tournamentRound = 0;
+		this.tournamentTarget = 3;
+		this.tournamentOver = false;
 	}
 
-	start() {
+	start(resetTournament = true) {
 		if (this.interval) {
 			clearInterval(this.interval);
 			this.interval = null;
@@ -135,6 +141,28 @@ class Game {
 		if (this.gameTimeout) {
 			clearTimeout(this.gameTimeout);
 			this.gameTimeout = null;
+		}
+
+		document.getElementById('tournament-overlay').classList.add('hidden');
+
+		const modeSlider = document.getElementById('game-mode');
+		const newMode = modeSlider ? parseInt(modeSlider.value, 10) : 0;
+		const shouldReset = resetTournament || newMode !== this.gameMode;
+		this.gameMode = newMode;
+
+		if (shouldReset || this.gameMode !== 1) {
+			this.tournamentWins = new Map();
+			this.tournamentCumScore = new Map();
+			this.tournamentRound = 0;
+			this.tournamentOver = false;
+		}
+		if (this.gameMode === 1) {
+			this.tournamentRound++;
+		}
+
+		const scorePanelTitle = document.querySelector('.score-panel-title');
+		if (scorePanelTitle) {
+			scorePanelTitle.textContent = this.gameMode === 1 ? `round ${this.tournamentRound}` : 'Scores';
 		}
 
 		const boardSizeSlider = document.getElementById('board-size');
@@ -283,12 +311,7 @@ class Game {
 		this.render();
 
 		if (this.bots.every(b => b.dead)) {
-			clearInterval(this.interval);
-			this.interval = null;
-			clearTimeout(this.gameTimeout);
-			this.gameTimeout = null;
-			clearInterval(this.clockInterval);
-			this.clockInterval = null;
+			this.endGame();
 		}
 	}
 
@@ -401,16 +424,138 @@ class Game {
 			clearInterval(this.interval);
 			this.interval = null;
 		}
+		if (this.gameTimeout) {
+			clearTimeout(this.gameTimeout);
+			this.gameTimeout = null;
+		}
 		clearInterval(this.clockInterval);
 		this.clockInterval = null;
 		for (const bot of this.bots) bot.dead = true;
 		this.render();
+
+		if (this.gameMode === 1) {
+			this.handleTournamentRoundEnd();
+			return;
+		}
+
 		const el = document.getElementById('clock-display');
 		if (el) {
 			el.textContent = 'game over';
 			el.classList.remove('clock-urgent');
 			el.classList.add('clock-done');
 		}
+	}
+
+	handleTournamentRoundEnd() {
+		const roundScores = new Map();
+		for (let r = 0; r < ROWS; r++) {
+			for (let c = 0; c < COLS; c++) {
+				const bot = this.cells[r][c];
+				if (bot !== null && bot.defIndex !== undefined && bot.defIndex >= 0) {
+					roundScores.set(bot.defIndex, (roundScores.get(bot.defIndex) || 0) + 1);
+				}
+			}
+		}
+
+		for (const [defIdx, score] of roundScores) {
+			this.tournamentCumScore.set(defIdx, (this.tournamentCumScore.get(defIdx) || 0) + score);
+		}
+
+		let maxScore = 0;
+		for (const score of roundScores.values()) {
+			if (score > maxScore) maxScore = score;
+		}
+
+		const roundWinners = [];
+		if (maxScore > 0) {
+			for (const [defIdx, score] of roundScores) {
+				if (score === maxScore) {
+					roundWinners.push(defIdx);
+					this.tournamentWins.set(defIdx, (this.tournamentWins.get(defIdx) || 0) + 1);
+				}
+			}
+		}
+
+		const tournamentWinners = [];
+		for (const [defIdx, wins] of this.tournamentWins) {
+			if (wins >= this.tournamentTarget) tournamentWinners.push(defIdx);
+		}
+
+		this.tournamentOver = tournamentWinners.length > 0;
+		this.showTournamentPopup(this.tournamentOver, roundWinners, roundScores, tournamentWinners);
+	}
+
+	showTournamentPopup(isFinal, roundWinners, roundScores, tournamentWinners) {
+		const title = document.getElementById('tournament-title');
+		const champion = document.getElementById('tournament-champion');
+		const roundResult = document.getElementById('tournament-round-result');
+		const standings = document.getElementById('tournament-standings');
+		const nextBtn = document.getElementById('tournament-next-btn');
+
+		title.textContent = isFinal ? 'tournament over' : `round ${this.tournamentRound} complete`;
+
+		if (isFinal) {
+			const names = tournamentWinners.map(idx => BOT_DEFS[idx]?.name || '').join(' & ');
+			champion.innerHTML = `<div class="tournament-champion-label">tournament champion</div><div class="tournament-champion-name">${names}</div>`;
+			champion.classList.remove('hidden');
+		} else {
+			champion.innerHTML = '';
+			champion.classList.add('hidden');
+		}
+
+		roundResult.innerHTML = '';
+		const label = document.createElement('div');
+		label.className = 'tournament-round-result-label';
+		label.textContent = `round ${this.tournamentRound} winner${roundWinners.length !== 1 ? 's' : ''}`;
+		roundResult.appendChild(label);
+
+		if (roundWinners.length === 0) {
+			const none = document.createElement('div');
+			none.style.cssText = 'font-size:0.82em;color:#555555';
+			none.textContent = 'no winner';
+			roundResult.appendChild(none);
+		} else {
+			for (const defIdx of roundWinners) {
+				const def = BOT_DEFS[defIdx];
+				if (!def) continue;
+				const row = document.createElement('div');
+				row.className = 'tournament-winner-row';
+				row.innerHTML = `<span class="t-col-swatch" style="background:${def.color}"></span><span style="color:#ffffff">${def.name}</span><span style="color:#666666;flex:1;text-align:right">${roundScores.get(defIdx) || 0} cells</span>`;
+				roundResult.appendChild(row);
+			}
+		}
+
+		standings.innerHTML = '';
+		const allDefIdxs = new Set([...this.tournamentWins.keys(), ...this.tournamentCumScore.keys()]);
+		const allEntries = [];
+		for (const defIdx of allDefIdxs) {
+			allEntries.push({
+				defIdx,
+				wins: this.tournamentWins.get(defIdx) || 0,
+				cumScore: this.tournamentCumScore.get(defIdx) || 0,
+			});
+		}
+		allEntries.sort((a, b) => b.wins - a.wins || b.cumScore - a.cumScore);
+		const topWins = allEntries.length ? allEntries[0].wins : 0;
+
+		const header = document.createElement('div');
+		header.className = 'tournament-standings-header';
+		header.innerHTML = `<span style="width:10px;flex-shrink:0"></span><span style="flex:1">bot</span><span class="t-col-wins">wins</span><span class="t-col-score">score</span>`;
+		standings.appendChild(header);
+
+		for (const { defIdx, wins, cumScore } of allEntries) {
+			const def = BOT_DEFS[defIdx];
+			if (!def) continue;
+			const isLeader = wins > 0 && wins === topWins;
+			const row = document.createElement('div');
+			row.className = 'tournament-standings-row' + (isLeader ? ' t-leader' : '');
+			const winStr = wins > 0 ? '★'.repeat(wins) : '—';
+			row.innerHTML = `<span class="t-col-swatch" style="background:${def.color}"></span><span class="t-col-name">${def.name}</span><span class="t-col-wins">${winStr}</span><span class="t-col-score">${cumScore}</span>`;
+			standings.appendChild(row);
+		}
+
+		nextBtn.textContent = isFinal ? 'new tournament' : 'next round';
+		document.getElementById('tournament-overlay').classList.remove('hidden');
 	}
 
 	updateClock() {
@@ -582,6 +727,10 @@ let settingsSnapshot = null;
 
 document.getElementById('new-game').addEventListener('click', () => {
 	game.start();
+});
+
+document.getElementById('tournament-next-btn').addEventListener('click', () => {
+	game.start(game.tournamentOver);
 });
 
 document.getElementById('settings').addEventListener('click', () => {

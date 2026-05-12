@@ -248,3 +248,78 @@ The game does not automatically restart when over — the player clicks "Run Aga
 - Only two bots in v1; more added later via new files in `js/bots/`
 - No pause button in v1
 - No bot labels or legend in v1
+
+---
+
+## Game Modes
+
+The mode slider in Settings has three positions: boring (0), tournament (1), battle royale (2). Mode takes effect on the next game start.
+
+### Boring (default)
+
+Standard single-round play. Game ends when the timer expires or all bots are dead. No win tracking.
+
+### Tournament
+
+Multi-round competition. The game runs repeated rounds using the current settings. Win and cumulative score totals persist across rounds until a bot reaches the win threshold (3 wins), at which point the tournament ends.
+
+#### Round end
+
+A round ends when either:
+- The game-length timer expires (`endGame()` called from `gameTimeout`)
+- All bots die simultaneously (`tick()` calls `endGame()` when `bots.every(b => b.dead)`)
+
+#### Round winner
+
+- The bot type (by `defIndex`) with the most cells claimed at round end wins that round.
+- All bot types tied at the maximum score each receive one win.
+- If no bot claimed any cells (max score = 0), no win is awarded for that round.
+- Scores are grouped by `defIndex` — Hydra children, Scout teammates, and Multiball spawns all count toward their parent type's score.
+
+#### Tournament win condition
+
+After each round, if any bot type has accumulated ≥ 3 wins, the tournament is over and a final popup is shown. Multiple bot types can reach 3 wins simultaneously (if they tie on the final round); all are declared co-champions.
+
+#### State
+
+Tracked on the `Game` object:
+
+| Property | Type | Purpose |
+|---|---|---|
+| `gameMode` | number | 0 = boring, 1 = tournament, 2 = battle royale |
+| `tournamentWins` | Map<defIndex, number> | Win count per bot type |
+| `tournamentCumScore` | Map<defIndex, number> | Cumulative cells claimed per bot type across all rounds |
+| `tournamentRound` | number | Current round number (1-based) |
+| `tournamentTarget` | number | Wins required to end the tournament (3) |
+| `tournamentOver` | boolean | Set to true when a winner has been declared |
+
+#### Reset behavior
+
+- **New Game button**: always resets all tournament state regardless of current round. `start(resetTournament = true)` is the default.
+- **Next Round button**: preserves wins and cumulative scores, increments the round. Calls `start(false)`.
+- **Mode change**: if the mode slider is changed between rounds, the tournament resets when the next game starts.
+
+#### Between-round popup
+
+Shown after every round end in tournament mode. Contains:
+
+1. Title: "round N complete"
+2. Round winner section: bot name, color swatch, and cell count for each winner. Shows "no winner" if no cells were claimed.
+3. Standings table: all bot types that have won at least one round or scored any cells, sorted by wins descending then cumulative score descending. Win counts shown as ★ characters (e.g. ★★ for 2 wins), — for zero wins.
+4. Button: "next round" — starts the next round without resetting standings.
+
+#### Final popup
+
+Shown after a round that pushes any bot type to ≥ 3 wins. Same structure as the between-round popup, plus:
+
+1. Title: "tournament over"
+2. Champion banner: bot name(s) of the tournament winner(s), shown in gold.
+3. Button changes to "new tournament" — resets all state and starts a fresh tournament.
+
+#### Score panel title
+
+During tournament mode, the "Scores" heading in the side panel is replaced with "round N" (e.g. "round 2") for the current round. Resets to "Scores" when mode is not tournament.
+
+#### `start(resetTournament)` signature
+
+`start()` accepts an optional boolean (default `true`). When `false`, tournament state is preserved and only the grid, bots, and powerups are reset for a new round.
