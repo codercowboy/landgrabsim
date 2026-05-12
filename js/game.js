@@ -438,6 +438,7 @@ class Game {
 	}
 
 	canMoveTo(col, row, bot) {
+		if (bot.dead) return false;
 		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
 		if (this.gameMode === 2 && this.activeBounds) {
 			const b = this.activeBounds;

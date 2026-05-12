@@ -12,6 +12,7 @@ class ScoutBot {
 	}
 
 	canMoveTo(col, row) {
+		if (this.dead) return false;
 		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
 		const game = this.game;
 		if (game.gameMode === 2 && game.activeBounds) {
@@ -20,7 +21,7 @@ class ScoutBot {
 		}
 		if (this.onFire) return true;
 		const cell = game.cells[row][col];
-		const passable = cell === null || cell === this || cell.color === this.color;
+		const passable = cell === null || cell === this || cell.color === this.color || (game.gameMode === 2 && cell !== null && cell.dead);
 		if (!passable && game.gameMode === 2 && cell !== null && !cell.dead) {
 			if (!game.damagedThisTick.has(this)) {
 				game.damagedThisTick.add(this);
@@ -30,10 +31,27 @@ class ScoutBot {
 					for (const b of this.game.bots) {
 						if (b.defIndex === this.defIndex) b.dead = true;
 					}
+					this.game.clearDefIndexCells(this.defIndex);
 				}
 			}
 		}
 		return passable;
+	}
+
+	tryDiagonal() {
+		if (Math.random() >= 0.1) return false;
+		const diags = [[-1,-1],[1,-1],[-1,1],[1,1]];
+		for (let i = diags.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[diags[i], diags[j]] = [diags[j], diags[i]];
+		}
+		for (const [ddc, ddr] of diags) {
+			if (this.canMoveTo(this.col + ddc, this.row + ddr)) {
+				this.game.moveBotTo(this, this.col + ddc, this.row + ddr);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	makeMove() {
@@ -43,6 +61,7 @@ class ScoutBot {
 			this.game.moveBotTo(this, nc, nr);
 			return true;
 		}
+		if (this.tryDiagonal()) return true;
 		const alts = [[0,-1],[0,1],[-1,0],[1,0]].filter(
 			([dc, dr]) => !(dc === this.dc && dr === this.dr)
 		);

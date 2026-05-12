@@ -11,6 +11,7 @@ class DrunkJezzballBot {
 		this.dc = 0;
 		this.dr = 0;
 		this.stuck = true;
+		this.speedChangeIn = 10 + Math.floor(Math.random() * 6);
 	}
 
 	get partner() {
@@ -41,6 +42,15 @@ class DrunkJezzballBot {
 	}
 
 	makeMove() {
+		this.speedChangeIn--;
+		if (this.speedChangeIn <= 0) {
+			this.speedChangeIn = 10 + Math.floor(Math.random() * 6);
+			if (this.ticksPerMove !== 1) {
+				const speeds = [3, 7, 25];
+				this.ticksPerMove = speeds[Math.floor(Math.random() * speeds.length)];
+			}
+		}
+
 		if (!this.stuck) {
 			const nc = this.col + this.dc;
 			const nr = this.row + this.dr;
