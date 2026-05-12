@@ -13,6 +13,7 @@ class ScoutBot {
 
 	canMoveTo(col, row) {
 		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+		if (this.onFire) return true;
 		const cell = this.game.cells[row][col];
 		return cell === null || cell === this || cell.color === this.color;
 	}

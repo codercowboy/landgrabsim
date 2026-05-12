@@ -90,17 +90,13 @@ h1 {
 	font-size: 0.9em;
 }
 
-.speed-label {
-	color: #777777;
-}
-
 #speed {
 	cursor: pointer;
 	accent-color: #4488ff;
 }
 
 #speed-display {
-	min-width: 44px;
+	min-width: 110px;
 	color: #aaaaaa;
 }
 
@@ -459,6 +455,35 @@ h1 {
 	border-top: 1px solid #333333;
 }
 
+.modal-mode-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 2px 0 14px;
+	border-bottom: 1px solid #333333;
+}
+
+.modal-mode-label {
+	font-size: 0.72em;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: #666666;
+	white-space: nowrap;
+}
+
+#game-mode {
+	flex: 1;
+	cursor: pointer;
+	accent-color: #4488ff;
+}
+
+#game-mode-display {
+	font-size: 0.82em;
+	color: #aaaaaa;
+	min-width: 80px;
+	text-align: right;
+}
+
 .modal-length-row {
 	display: flex;
 	align-items: center;
@@ -552,7 +577,6 @@ h1 {
 	justify-content: center;
 	flex-shrink: 0;
 	font-size: 0.8em;
-	margin-left: auto;
 }
 
 .pu-speed {
@@ -560,23 +584,12 @@ h1 {
 	font-size: 0.9em;
 }
 
-.pu-multiball {
-	width: 14px;
-	height: 14px;
-	border: 1px solid rgba(255, 255, 255, 0.5);
-	border-radius: 50%;
-	gap: 2px;
-}
-
-.pu-multiball span {
-	width: 3px;
-	height: 3px;
-	background: rgba(255, 255, 255, 0.8);
-	border-radius: 50%;
-	display: block;
-}
 
 .pu-death {
 	color: #ff3333;
 	font-size: 0.9em;
+}
+
+.pu-fire {
+	font-size: 0.85em;
 }

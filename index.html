@@ -16,10 +16,8 @@
 			<div class="controls">
 				<div class="speed-control">
 					<label for="speed">Speed:</label>
-					<span class="speed-label">Slow</span>
-					<input type="range" id="speed" min="0" max="10" value="10">
-					<span class="speed-label">Fast</span>
-					<span id="speed-display">1s</span>
+					<input type="range" id="speed" min="0" max="4" value="2">
+					<span id="speed-display">Normal</span>
 				</div>
 				<div class="button-row">
 					<button id="settings">Settings</button>
@@ -39,6 +37,11 @@
 	<div id="modal-overlay" class="modal-overlay hidden">
 		<div class="modal-panel">
 			<div class="modal-title">Settings</div>
+			<div class="modal-mode-row">
+				<span class="modal-mode-label">Mode</span>
+				<input type="range" id="game-mode" min="0" max="2" value="0" step="1">
+				<span id="game-mode-display">boring</span>
+			</div>
 			<div class="modal-columns">
 				<div class="modal-section">
 					<div class="modal-section-title">Bots</div>

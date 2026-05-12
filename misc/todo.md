@@ -21,3 +21,13 @@ Behavior still needs work — come back to this when there's a clearer idea of w
 ### Task 3: Fix Hydra spawning
 
 Hydra isn't spawning replacement bots correctly. Investigate and fix.
+
+
+---
+
+Othere tasks:
+
+a: bug where powerup icon shows up on settings panel not scoreboard
+b: lawnmower isn't working
+c: hydra isn't working
+d: when big boy hits another bot's line 'half way', he gets off track

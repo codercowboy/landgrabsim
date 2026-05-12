@@ -2,22 +2,23 @@ const COLS = 100;
 const ROWS = 50;
 const CELL_SIZE = 10;
 
-const SPEEDS = [5000, 2000, 1000, 500, 250, 125, 62, 31, 16, 8, 4];
-const SPEED_LABELS = ['5s', '2s', '1s', '1/2s', '1/4s', '1/8s', '1/16s', '1/32s', '1/64s', '1/128s', '1/256s'];
+const SPEEDS = [1000, 100, 15, 5, 1];
+const SPEED_LABELS = ['Is this thing on?', 'Yawn', 'Normal', 'Fast', "Don't blink!"];
 
 const GAME_LENGTHS = [30000, 60000, 120000, 300000, Infinity];
 const GAME_LENGTH_LABELS = ['30s', '1m', '2m', '5m', '∞'];
+const MODE_LABELS = ['boring', 'tournament', 'battle royale'];
 
 const BOT_DEFS = [
-	{ Class: AirportLineBot, name: 'Airport Line', color: '#4488ff', size: 1, ticksPerMove: 10 },
-	{ Class: ChaosBot,       name: 'Chaos',        color: '#ff8800', size: 1, ticksPerMove: 10 },
-	{ Class: LawnmowerBot,   name: 'Lawnmower',    color: '#44cc44', size: 1, ticksPerMove: 10 },
-	{ Class: GenghisBot,     name: 'Genghis',      color: '#cc2222', size: 1, ticksPerMove: 10 },
-	{ Class: BigBoyBot,      name: 'Big Boy',       color: '#ffdd00', size: 2, ticksPerMove: 20 },
-	{ Class: HydraBot,       name: 'Hydra',        color: '#aa44ff', size: 1, ticksPerMove: 10 },
-	{ Class: ScoutBot,       name: 'Scout',        color: '#ff55cc', size: 1, ticksPerMove: 30, count: 3 },
-	{ Class: BishopBot,      name: 'Bishop',       color: '#00ccbb', size: 1, ticksPerMove: 10 },
-	{ Class: DrunkJezzballBot, name: 'Drunk Jezzball', color: '#ff6644', size: 1, ticksPerMove: 20, count: 2 },
+	{ Class: AirportLineBot, name: 'Airport Line', color: '#4488ff', size: 1, ticksPerMove: 3 },
+	{ Class: ChaosBot,       name: 'Chaos',        color: '#ff8800', size: 1, ticksPerMove: 3 },
+	{ Class: LawnmowerBot,   name: 'Lawnmower',    color: '#44cc44', size: 1, ticksPerMove: 3 },
+	{ Class: GenghisBot,     name: 'Genghis',      color: '#cc2222', size: 1, ticksPerMove: 3 },
+	{ Class: BigBoyBot,      name: 'Big Boy',       color: '#ffdd00', size: 2, ticksPerMove: 6 },
+	{ Class: HydraBot,       name: 'Hydra',        color: '#aa44ff', size: 1, ticksPerMove: 3 },
+	{ Class: ScoutBot,       name: 'Scout',        color: '#ff55cc', size: 1, ticksPerMove: 3, count: 3 },
+	{ Class: BishopBot,      name: 'Bishop',       color: '#00ccbb', size: 1, ticksPerMove: 3 },
+	{ Class: DrunkJezzballBot, name: 'Drunk Jezzball', color: '#ff6644', size: 1, ticksPerMove: 7, count: 2 },
 ];
 
 const POWERUP_DEFS = [
@@ -42,7 +43,7 @@ const POWERUP_DEFS = [
 		id: 'multiball',
 		name: 'Multiball',
 		color: '#ffaa00',
-		icon: '<span class="pu-icon pu-multiball"><span></span><span></span><span></span></span>',
+		icon: '<span class="pu-icon pu-multiball">🎱</span>',
 		apply(bot) {
 			const def = BOT_DEFS[bot.defIndex];
 			if (!def) return;
@@ -72,6 +73,18 @@ const POWERUP_DEFS = [
 			for (const mate of (bot.teammates || [])) mate.dead = true;
 		},
 	},
+	{
+		id: 'fire',
+		name: "He's on Fire!!",
+		color: '#ff6600',
+		icon: '<span class="pu-icon pu-fire">🔥</span>',
+		apply(bot) {
+			bot.onFire = true;
+			if (bot.teammates) {
+				for (const mate of bot.teammates) mate.onFire = true;
+			}
+		},
+	},
 ];
 
 class Game {
@@ -84,12 +97,13 @@ class Game {
 		this.bots = [];
 		this.powerups = new Map();
 		this.powerupElements = new Map();
+		this.collectedPowerups = new Map();
 		this.interval = null;
 		this.clockInterval = null;
 		this.gameTimeout = null;
 		this.gameStartTime = null;
 		this.gameDuration = GAME_LENGTHS[0];
-		this.currentSpeed = SPEEDS[9];
+		this.currentSpeed = SPEEDS[2];
 	}
 
 	start() {
@@ -107,6 +121,7 @@ class Game {
 		}
 
 		document.querySelectorAll('.speed-indicator').forEach(el => el.textContent = '');
+		this.collectedPowerups = new Map();
 		this.cells = Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
 		const activeDefs = BOT_DEFS.filter((_, i) => {
 			const cb = document.querySelector(`.bot-checkbox[data-index="${i}"]`);
@@ -212,7 +227,14 @@ class Game {
 
 	collectPowerup(bot, key) {
 		if (this.powerups.has(key)) {
-			this.powerups.get(key).apply(bot);
+			const def = this.powerups.get(key);
+			def.apply(bot);
+			if (bot.defIndex !== undefined) {
+				if (!this.collectedPowerups.has(bot.defIndex)) {
+					this.collectedPowerups.set(bot.defIndex, new Set());
+				}
+				this.collectedPowerups.get(bot.defIndex).add(def.id);
+			}
 			this.powerups.delete(key);
 			if (this.powerupElements.has(key)) {
 				this.powerupElements.get(key).remove();
@@ -304,6 +326,14 @@ class Game {
 			ctx.moveTo(x + w - 1, y + 1);
 			ctx.lineTo(x + 1, y + h - 1);
 			ctx.stroke();
+		} else if (bot.onFire) {
+			const t = (Math.sin(Date.now() / 150) + 1) / 2;
+			const g = Math.round(t * 255);
+			const b = Math.round(Math.max(0, t * 2 - 1) * 255);
+			ctx.fillStyle = `rgb(255,${g},${b})`;
+			ctx.fillRect(x, y, w, h);
+			ctx.fillStyle = bot.color;
+			ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
 		} else {
 			ctx.fillStyle = '#ffffff';
 			ctx.fillRect(x, y, w, h);
@@ -314,6 +344,7 @@ class Game {
 
 	canMoveTo(col, row, bot) {
 		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+		if (bot.onFire) return true;
 		const cell = this.cells[row][col];
 		return cell === null || cell === bot;
 	}
@@ -400,9 +431,14 @@ class Game {
 		for (const { defIdx, score } of entries) {
 			const def = BOT_DEFS[defIdx];
 			if (!def) continue;
+			const collected = this.collectedPowerups.get(defIdx) || new Set();
+			const iconHtml = POWERUP_DEFS
+				.filter(p => collected.has(p.id))
+				.map(p => p.icon)
+				.join('');
 			const row = document.createElement('div');
 			row.className = 'score-item' + (score === maxScore ? ' score-leader' : '');
-			row.innerHTML = `<span class="bot-swatch" style="background:${def.color}"></span><span class="score-name">${def.name}</span><span class="score-value">${score}</span>`;
+			row.innerHTML = `<span class="bot-swatch" style="background:${def.color}"></span><span class="score-name">${def.name}</span>${iconHtml}<span class="score-value">${score}</span>`;
 			list.appendChild(row);
 		}
 	}
@@ -438,7 +474,6 @@ function buildPowerupPanel() {
 		label.className = 'powerup-item';
 		label.innerHTML = `
 			<input type="checkbox" class="powerup-checkbox" data-index="${i}" checked>
-			<span class="powerup-swatch" style="background:${def.color};box-shadow:0 0 6px ${def.color}"></span>
 			<span class="powerup-name">${def.name}</span>
 			${def.icon || ''}
 		`;
@@ -468,6 +503,7 @@ function snapshotSettings() {
 		powerups: Array.from(document.querySelectorAll('.powerup-checkbox')).map(cb => cb.checked),
 		powerupCount: document.getElementById('powerup-count').value,
 		gameLength: document.getElementById('game-length').value,
+		gameMode: document.getElementById('game-mode').value,
 	};
 }
 
@@ -480,6 +516,9 @@ function restoreSettings(snapshot) {
 	const glSlider = document.getElementById('game-length');
 	glSlider.value = snapshot.gameLength;
 	document.getElementById('game-length-display').textContent = GAME_LENGTH_LABELS[snapshot.gameLength];
+	const gmSlider = document.getElementById('game-mode');
+	gmSlider.value = snapshot.gameMode;
+	document.getElementById('game-mode-display').textContent = MODE_LABELS[snapshot.gameMode];
 }
 
 let settingsSnapshot = null;
@@ -520,6 +559,12 @@ const gameLengthSlider = document.getElementById('game-length');
 const gameLengthDisplay = document.getElementById('game-length-display');
 gameLengthSlider.addEventListener('input', () => {
 	gameLengthDisplay.textContent = GAME_LENGTH_LABELS[parseInt(gameLengthSlider.value, 10)];
+});
+
+const gameModeSlider = document.getElementById('game-mode');
+const gameModeDisplay = document.getElementById('game-mode-display');
+gameModeSlider.addEventListener('input', () => {
+	gameModeDisplay.textContent = MODE_LABELS[parseInt(gameModeSlider.value, 10)];
 });
 
 game.start();
