@@ -421,6 +421,35 @@ h1 {
 	border-top: 1px solid #333333;
 }
 
+.modal-length-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 0 2px;
+	border-top: 1px solid #333333;
+}
+
+.modal-length-label {
+	font-size: 0.72em;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: #666666;
+	white-space: nowrap;
+}
+
+#game-length {
+	flex: 1;
+	cursor: pointer;
+	accent-color: #4488ff;
+}
+
+#game-length-display {
+	font-size: 0.82em;
+	color: #aaaaaa;
+	min-width: 28px;
+	text-align: right;
+}
+
 .modal-btn {
 	padding: 7px 22px;
 	font-size: 0.9em;

@@ -5,6 +5,9 @@ const CELL_SIZE = 10;
 const SPEEDS = [5000, 2000, 1000, 500, 250, 125, 62, 31, 16, 8, 4];
 const SPEED_LABELS = ['5s', '2s', '1s', '1/2s', '1/4s', '1/8s', '1/16s', '1/32s', '1/64s', '1/128s', '1/256s'];
 
+const GAME_LENGTHS = [30000, 60000, 120000, 300000, Infinity];
+const GAME_LENGTH_LABELS = ['30s', '1m', '2m', '5m', '∞'];
+
 const BOT_DEFS = [
 	{ Class: AirportLineBot, name: 'Airport Line', color: '#4488ff', size: 1, ticksPerMove: 10 },
 	{ Class: ChaosBot,       name: 'Chaos',        color: '#ff8800', size: 1, ticksPerMove: 10 },
@@ -82,6 +85,7 @@ class Game {
 		this.clockInterval = null;
 		this.gameTimeout = null;
 		this.gameStartTime = null;
+		this.gameDuration = GAME_LENGTHS[0];
 		this.currentSpeed = SPEEDS[9];
 	}
 
@@ -110,10 +114,15 @@ class Game {
 		this.render();
 		this.interval = setInterval(() => this.tick(), this.currentSpeed);
 
+		const lengthSlider = document.getElementById('game-length');
+		this.gameDuration = GAME_LENGTHS[lengthSlider ? parseInt(lengthSlider.value, 10) : 0];
+
 		this.gameStartTime = Date.now();
 		this.clockInterval = setInterval(() => this.updateClock(), 50);
 		this.updateClock();
-		this.gameTimeout = setTimeout(() => this.endGame(), 30000);
+		if (this.gameDuration !== Infinity) {
+			this.gameTimeout = setTimeout(() => this.endGame(), this.gameDuration);
+		}
 	}
 
 	spawnBots(defs) {
@@ -347,10 +356,15 @@ class Game {
 	}
 
 	updateClock() {
-		const remaining = Math.max(0, 30000 - (Date.now() - this.gameStartTime));
 		const el = document.getElementById('clock-display');
 		if (!el) return;
 		el.classList.remove('clock-done');
+		if (this.gameDuration === Infinity) {
+			el.textContent = '∞';
+			el.classList.remove('clock-urgent');
+			return;
+		}
+		const remaining = Math.max(0, this.gameDuration - (Date.now() - this.gameStartTime));
 		if (remaining <= 10000) {
 			el.textContent = (remaining / 1000).toFixed(2) + 's';
 			el.classList.add('clock-urgent');
@@ -449,15 +463,19 @@ function snapshotSettings() {
 		bots: Array.from(document.querySelectorAll('.bot-checkbox')).map(cb => cb.checked),
 		powerups: Array.from(document.querySelectorAll('.powerup-checkbox')).map(cb => cb.checked),
 		powerupCount: document.getElementById('powerup-count').value,
+		gameLength: document.getElementById('game-length').value,
 	};
 }
 
 function restoreSettings(snapshot) {
 	document.querySelectorAll('.bot-checkbox').forEach((cb, i) => cb.checked = snapshot.bots[i]);
 	document.querySelectorAll('.powerup-checkbox').forEach((cb, i) => cb.checked = snapshot.powerups[i]);
-	const slider = document.getElementById('powerup-count');
-	slider.value = snapshot.powerupCount;
+	const pcSlider = document.getElementById('powerup-count');
+	pcSlider.value = snapshot.powerupCount;
 	document.getElementById('powerup-count-display').textContent = snapshot.powerupCount;
+	const glSlider = document.getElementById('game-length');
+	glSlider.value = snapshot.gameLength;
+	document.getElementById('game-length-display').textContent = GAME_LENGTH_LABELS[snapshot.gameLength];
 }
 
 let settingsSnapshot = null;
@@ -484,6 +502,12 @@ const powerupCountSlider = document.getElementById('powerup-count');
 const powerupCountDisplay = document.getElementById('powerup-count-display');
 powerupCountSlider.addEventListener('input', () => {
 	powerupCountDisplay.textContent = powerupCountSlider.value;
+});
+
+const gameLengthSlider = document.getElementById('game-length');
+const gameLengthDisplay = document.getElementById('game-length-display');
+gameLengthSlider.addEventListener('input', () => {
+	gameLengthDisplay.textContent = GAME_LENGTH_LABELS[parseInt(gameLengthSlider.value, 10)];
 });
 
 game.start();
