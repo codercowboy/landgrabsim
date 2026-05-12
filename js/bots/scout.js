@@ -1,0 +1,44 @@
+class ScoutBot {
+	constructor(game, col, row, color) {
+		this.game = game;
+		this.col = col;
+		this.row = row;
+		this.color = color;
+		this.dead = false;
+		this.size = 1;
+		this.teammates = [];
+		const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+		[this.dc, this.dr] = dirs[Math.floor(Math.random() * 4)];
+	}
+
+	canMoveTo(col, row) {
+		if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+		const cell = this.game.cells[row][col];
+		return cell === null || cell === this || cell.color === this.color;
+	}
+
+	makeMove() {
+		const nc = this.col + this.dc;
+		const nr = this.row + this.dr;
+		if (this.canMoveTo(nc, nr)) {
+			this.game.moveBotTo(this, nc, nr);
+			return true;
+		}
+		const alts = [[0,-1],[0,1],[-1,0],[1,0]].filter(
+			([dc, dr]) => !(dc === this.dc && dr === this.dr)
+		);
+		for (let i = alts.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[alts[i], alts[j]] = [alts[j], alts[i]];
+		}
+		for (const [dc, dr] of alts) {
+			if (this.canMoveTo(this.col + dc, this.row + dr)) {
+				this.dc = dc;
+				this.dr = dr;
+				this.game.moveBotTo(this, this.col + dc, this.row + dr);
+				return true;
+			}
+		}
+		return false;
+	}
+}

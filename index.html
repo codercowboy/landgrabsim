@@ -9,7 +9,10 @@
 	<h1>Jason's Game Of Life <span class="subtitle">aka Land Grab Simulator</span></h1>
 	<div class="main-layout">
 		<div class="game-column">
-			<canvas id="grid"></canvas>
+			<div class="game-wrap">
+				<canvas id="grid"></canvas>
+				<div id="powerup-overlay"></div>
+			</div>
 			<div class="controls">
 				<div class="speed-control">
 					<label for="speed">Speed:</label>
@@ -18,20 +21,51 @@
 					<span class="speed-label">Fast</span>
 					<span id="speed-display">1s</span>
 				</div>
-				<button id="run-again">Run Again</button>
+				<button id="new-game">New Game</button>
 			</div>
 		</div>
-		<aside class="bot-panel">
-			<div class="bot-panel-title">Bots</div>
-			<div id="bot-list"></div>
+		<aside class="side-panel">
+			<div class="score-panel-title">Scores</div>
+			<div id="score-list"></div>
+			<div class="clock-panel-title">Time</div>
+			<div id="clock-display" class="clock-display">30s</div>
 		</aside>
 	</div>
+
+	<div id="modal-overlay" class="modal-overlay hidden">
+		<div class="modal-panel">
+			<div class="modal-title">New Game</div>
+			<div class="modal-columns">
+				<div class="modal-section">
+					<div class="modal-section-title">Bots</div>
+					<div id="bot-list"></div>
+				</div>
+				<div class="modal-section modal-section-right">
+					<div class="modal-section-title">Powerups</div>
+					<div id="powerup-list"></div>
+					<div class="powerup-count-row">
+						<span class="powerup-count-label">Count</span>
+						<input type="range" id="powerup-count" min="1" max="10" value="3">
+						<span id="powerup-count-display">3</span>
+					</div>
+				</div>
+			</div>
+			<div class="modal-actions">
+				<button class="modal-btn" id="modal-cancel">Cancel</button>
+				<button class="modal-btn modal-btn-start" id="modal-start">Start</button>
+			</div>
+		</div>
+	</div>
+
 	<script src="js/bots/genghis.js"></script>
 	<script src="js/bots/big-boy.js"></script>
 	<script src="js/bots/hydra.js"></script>
 	<script src="js/bots/lawnmower.js"></script>
 	<script src="js/bots/airport-line.js"></script>
 	<script src="js/bots/chaos.js"></script>
+	<script src="js/bots/scout.js"></script>
+	<script src="js/bots/bishop.js"></script>
+	<script src="js/bots/drunk-jezzball.js"></script>
 	<script src="js/game.js"></script>
 </body>
 </html>

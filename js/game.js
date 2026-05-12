@@ -6,12 +6,34 @@ const SPEEDS = [5000, 2000, 1000, 500, 250, 125, 62, 31, 16, 8, 4];
 const SPEED_LABELS = ['5s', '2s', '1s', '1/2s', '1/4s', '1/8s', '1/16s', '1/32s', '1/64s', '1/128s', '1/256s'];
 
 const BOT_DEFS = [
-	{ Class: AirportLineBot, name: 'Airport Line', color: '#4488ff', size: 1 },
-	{ Class: ChaosBot,       name: 'Chaos',        color: '#ff8800', size: 1 },
-	{ Class: LawnmowerBot,   name: 'Lawnmower',    color: '#44cc44', size: 1 },
-	{ Class: GenghisBot,     name: 'Genghis',      color: '#cc2222', size: 1 },
-	{ Class: BigBoyBot,      name: 'Big Boy',      color: '#ffdd00', size: 2 },
-	{ Class: HydraBot,       name: 'Hydra',        color: '#aa44ff', size: 1 },
+	{ Class: AirportLineBot, name: 'Airport Line', color: '#4488ff', size: 1, ticksPerMove: 10 },
+	{ Class: ChaosBot,       name: 'Chaos',        color: '#ff8800', size: 1, ticksPerMove: 10 },
+	{ Class: LawnmowerBot,   name: 'Lawnmower',    color: '#44cc44', size: 1, ticksPerMove: 10 },
+	{ Class: GenghisBot,     name: 'Genghis',      color: '#cc2222', size: 1, ticksPerMove: 10 },
+	{ Class: BigBoyBot,      name: 'Big Boy',       color: '#ffdd00', size: 2, ticksPerMove: 20 },
+	{ Class: HydraBot,       name: 'Hydra',        color: '#aa44ff', size: 1, ticksPerMove: 10 },
+	{ Class: ScoutBot,       name: 'Scout',        color: '#ff55cc', size: 1, ticksPerMove: 30, count: 3 },
+	{ Class: BishopBot,      name: 'Bishop',       color: '#00ccbb', size: 1, ticksPerMove: 10 },
+	{ Class: DrunkJezzballBot, name: 'Drunk Jezzball', color: '#ff6644', size: 1, ticksPerMove: 10, count: 2 },
+];
+
+const POWERUP_DEFS = [
+	{
+		id: 'speed',
+		name: 'Speed Boost',
+		color: '#00ffcc',
+		count: 1,
+		apply(bot) {
+			bot.ticksPerMove = 5;
+			if (bot.teammates) {
+				for (const mate of bot.teammates) mate.ticksPerMove = 5;
+			}
+			if (bot.defIndex !== undefined) {
+				const el = document.getElementById(`speed-indicator-${bot.defIndex}`);
+				if (el) el.textContent = '▲';
+			}
+		},
+	},
 ];
 
 class Game {
@@ -22,7 +44,12 @@ class Game {
 		canvas.height = ROWS * CELL_SIZE;
 		this.cells = null;
 		this.bots = [];
+		this.powerups = new Map();
+		this.powerupElements = new Map();
 		this.interval = null;
+		this.clockInterval = null;
+		this.gameTimeout = null;
+		this.gameStartTime = null;
 		this.currentSpeed = SPEEDS[9];
 	}
 
@@ -31,20 +58,36 @@ class Game {
 			clearInterval(this.interval);
 			this.interval = null;
 		}
+		if (this.clockInterval) {
+			clearInterval(this.clockInterval);
+			this.clockInterval = null;
+		}
+		if (this.gameTimeout) {
+			clearTimeout(this.gameTimeout);
+			this.gameTimeout = null;
+		}
 
+		document.querySelectorAll('.speed-indicator').forEach(el => el.textContent = '');
 		this.cells = Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
 		const activeDefs = BOT_DEFS.filter((_, i) => {
 			const cb = document.querySelector(`.bot-checkbox[data-index="${i}"]`);
 			return cb ? cb.checked : true;
 		});
 		this.bots = this.spawnBots(activeDefs);
+		this.placePowerups();
 		this.render();
 		this.interval = setInterval(() => this.tick(), this.currentSpeed);
+
+		this.gameStartTime = Date.now();
+		this.clockInterval = setInterval(() => this.updateClock(), 50);
+		this.updateClock();
+		this.gameTimeout = setTimeout(() => this.endGame(), 30000);
 	}
 
 	spawnBots(defs) {
 		const used = new Set();
-		return defs.map(({ Class, color, size = 1 }) => {
+		return defs.flatMap((def) => {
+			const { Class, color, size = 1, ticksPerMove = 20, count = 1 } = def;
 			let col, row;
 			do {
 				col = Math.floor(Math.random() * (COLS - size + 1));
@@ -60,22 +103,86 @@ class Game {
 					this.cells[row+dr][col+dc] = null;
 				}
 			}
-			const bot = new Class(this, col, row, color);
-			bot.movesSinceNewLand = 0;
-			for (let dr = 0; dr < size; dr++) {
-				for (let dc = 0; dc < size; dc++) {
-					this.cells[row+dr][col+dc] = bot;
+			const group = [];
+			for (let n = 0; n < count; n++) {
+				const bot = new Class(this, col, row, color);
+				bot.defIndex = BOT_DEFS.indexOf(def);
+				bot.movesSinceNewLand = 0;
+				bot.ticksPerMove = ticksPerMove;
+				bot.moveCooldown = 0;
+				group.push(bot);
+			}
+			if (group.length > 1) {
+				for (const bot of group) {
+					bot.teammates = group.filter(b => b !== bot);
+				}
+				group[0].isLeader = true;
+				if (typeof group[0].onGroupReady === 'function') {
+					group[0].onGroupReady();
 				}
 			}
-			return bot;
+			for (let dr = 0; dr < size; dr++) {
+				for (let dc = 0; dc < size; dc++) {
+					this.cells[row+dr][col+dc] = group[group.length - 1];
+				}
+			}
+			return group;
 		});
+	}
+
+	placePowerups() {
+		this.powerups = new Map();
+		this.powerupElements = new Map();
+		const overlay = document.getElementById('powerup-overlay');
+		overlay.innerHTML = '';
+
+		const countSlider = document.getElementById('powerup-count');
+		const powerupCount = countSlider ? parseInt(countSlider.value, 10) : 3;
+
+		POWERUP_DEFS.forEach((def, i) => {
+			const cb = document.querySelector(`.powerup-checkbox[data-index="${i}"]`);
+			if (cb && !cb.checked) return;
+			let placed = 0;
+			let attempts = 0;
+			while (placed < powerupCount && attempts < 10000) {
+				attempts++;
+				const c = Math.floor(Math.random() * COLS);
+				const r = Math.floor(Math.random() * ROWS);
+				const key = `${c},${r}`;
+				if (this.cells[r][c] === null && !this.powerups.has(key)) {
+					this.powerups.set(key, def);
+					const el = document.createElement('div');
+					el.className = 'powerup-block';
+					el.style.left = (c * CELL_SIZE + 1) + 'px';
+					el.style.top  = (r * CELL_SIZE + 1) + 'px';
+					overlay.appendChild(el);
+					this.powerupElements.set(key, el);
+					placed++;
+				}
+			}
+		});
+	}
+
+	collectPowerup(bot, key) {
+		if (this.powerups.has(key)) {
+			this.powerups.get(key).apply(bot);
+			this.powerups.delete(key);
+			if (this.powerupElements.has(key)) {
+				this.powerupElements.get(key).remove();
+				this.powerupElements.delete(key);
+			}
+		}
 	}
 
 	tick() {
 		for (const bot of this.bots) {
 			if (!bot.dead) {
-				if (!bot.makeMove() || bot.movesSinceNewLand >= 100) {
-					bot.dead = true;
+				bot.moveCooldown++;
+				if (bot.moveCooldown >= bot.ticksPerMove) {
+					bot.moveCooldown = 0;
+					if (!bot.makeMove() || bot.movesSinceNewLand >= 100) {
+						bot.dead = true;
+					}
 				}
 			}
 		}
@@ -85,6 +192,10 @@ class Game {
 		if (this.bots.every(b => b.dead)) {
 			clearInterval(this.interval);
 			this.interval = null;
+			clearTimeout(this.gameTimeout);
+			this.gameTimeout = null;
+			clearInterval(this.clockInterval);
+			this.clockInterval = null;
 		}
 	}
 
@@ -121,6 +232,8 @@ class Game {
 		for (const bot of this.bots) {
 			this.drawBot(bot);
 		}
+
+		this.updateScores();
 	}
 
 	drawBot(bot) {
@@ -159,6 +272,8 @@ class Game {
 	}
 
 	moveBotTo(bot, col, row) {
+		const key = `${col},${row}`;
+		this.collectPowerup(bot, key);
 		if (this.cells[row][col] === null) {
 			bot.movesSinceNewLand = 0;
 		} else {
@@ -171,9 +286,73 @@ class Game {
 
 	spawnMidGame(Class, col, row, color) {
 		const bot = new Class(this, col, row, color);
+		bot.defIndex = BOT_DEFS.findIndex(d => d.Class === Class);
 		bot.movesSinceNewLand = 0;
+		bot.ticksPerMove = 20;
+		bot.moveCooldown = 0;
 		this.cells[row][col] = bot;
 		this.bots.push(bot);
+	}
+
+	endGame() {
+		if (this.interval) {
+			clearInterval(this.interval);
+			this.interval = null;
+		}
+		clearInterval(this.clockInterval);
+		this.clockInterval = null;
+		for (const bot of this.bots) bot.dead = true;
+		this.render();
+		const el = document.getElementById('clock-display');
+		if (el) {
+			el.textContent = 'game over';
+			el.classList.remove('clock-urgent');
+			el.classList.add('clock-done');
+		}
+	}
+
+	updateClock() {
+		const remaining = Math.max(0, 30000 - (Date.now() - this.gameStartTime));
+		const el = document.getElementById('clock-display');
+		if (!el) return;
+		el.classList.remove('clock-done');
+		if (remaining <= 10000) {
+			el.textContent = (remaining / 1000).toFixed(2) + 's';
+			el.classList.add('clock-urgent');
+		} else {
+			el.textContent = Math.ceil(remaining / 1000) + 's';
+			el.classList.remove('clock-urgent');
+		}
+	}
+
+	updateScores() {
+		const scores = new Map();
+		for (let r = 0; r < ROWS; r++) {
+			for (let c = 0; c < COLS; c++) {
+				const bot = this.cells[r][c];
+				if (bot !== null && bot.defIndex !== undefined && bot.defIndex >= 0) {
+					scores.set(bot.defIndex, (scores.get(bot.defIndex) || 0) + 1);
+				}
+			}
+		}
+
+		const entries = [];
+		for (const [defIdx, score] of scores) {
+			entries.push({ defIdx, score });
+		}
+		entries.sort((a, b) => b.score - a.score);
+		const maxScore = entries.length ? entries[0].score : 0;
+
+		const list = document.getElementById('score-list');
+		list.innerHTML = '';
+		for (const { defIdx, score } of entries) {
+			const def = BOT_DEFS[defIdx];
+			if (!def) continue;
+			const row = document.createElement('div');
+			row.className = 'score-item' + (score === maxScore ? ' score-leader' : '');
+			row.innerHTML = `<span class="bot-swatch" style="background:${def.color}"></span><span class="score-name">${def.name}</span><span class="score-value">${score}</span>`;
+			list.appendChild(row);
+		}
 	}
 
 	setSpeed(speedMs) {
@@ -194,6 +373,21 @@ function buildBotPanel() {
 			<input type="checkbox" class="bot-checkbox" data-index="${i}" checked>
 			<span class="bot-swatch" style="background:${def.color}"></span>
 			<span class="bot-name">${def.name}</span>
+			<span class="speed-indicator" id="speed-indicator-${i}"></span>
+		`;
+		list.appendChild(label);
+	});
+}
+
+function buildPowerupPanel() {
+	const list = document.getElementById('powerup-list');
+	POWERUP_DEFS.forEach((def, i) => {
+		const label = document.createElement('label');
+		label.className = 'powerup-item';
+		label.innerHTML = `
+			<input type="checkbox" class="powerup-checkbox" data-index="${i}" checked>
+			<span class="powerup-swatch" style="background:${def.color};box-shadow:0 0 6px ${def.color}"></span>
+			<span class="powerup-name">${def.name}</span>
 		`;
 		list.appendChild(label);
 	});
@@ -202,6 +396,7 @@ function buildBotPanel() {
 const canvas = document.getElementById('grid');
 const game = new Game(canvas);
 buildBotPanel();
+buildPowerupPanel();
 
 const speedSlider = document.getElementById('speed');
 const speedDisplay = document.getElementById('speed-display');
@@ -212,6 +407,25 @@ speedSlider.addEventListener('input', () => {
 	game.setSpeed(SPEEDS[idx]);
 });
 
-document.getElementById('run-again').addEventListener('click', () => game.start());
+const modalOverlay = document.getElementById('modal-overlay');
+
+document.getElementById('new-game').addEventListener('click', () => {
+	modalOverlay.classList.remove('hidden');
+});
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+	modalOverlay.classList.add('hidden');
+});
+
+document.getElementById('modal-start').addEventListener('click', () => {
+	modalOverlay.classList.add('hidden');
+	game.start();
+});
+
+const powerupCountSlider = document.getElementById('powerup-count');
+const powerupCountDisplay = document.getElementById('powerup-count-display');
+powerupCountSlider.addEventListener('input', () => {
+	powerupCountDisplay.textContent = powerupCountSlider.value;
+});
 
 game.start();

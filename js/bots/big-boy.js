@@ -6,7 +6,6 @@ class BigBoyBot {
 		this.color = color;
 		this.dead = false;
 		this.size = 2;
-		this.skipNext = false;
 	}
 
 	getNewCells(dc, dr) {
@@ -28,6 +27,7 @@ class BigBoyBot {
 		const newCells = this.getNewCells(dc, dr);
 		const claimedNew = newCells.some(([c, r]) => this.game.cells[r][c] === null);
 		for (const [c, r] of newCells) {
+			this.game.collectPowerup(this, `${c},${r}`);
 			this.game.cells[r][c] = this;
 		}
 		this.movesSinceNewLand = claimedNew ? 0 : this.movesSinceNewLand + 1;
@@ -36,12 +36,6 @@ class BigBoyBot {
 	}
 
 	makeMove() {
-		if (this.skipNext) {
-			this.skipNext = false;
-			return true;
-		}
-		this.skipNext = true;
-
 		const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
 		for (let i = dirs.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
