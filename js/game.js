@@ -2,11 +2,12 @@ const COLS = 100;
 const ROWS = 50;
 const CELL_SIZE = 10;
 
-const SPEEDS = [5000, 2000, 1000, 500, 250, 125, 62, 31, 16];
-const SPEED_LABELS = ['5s', '2s', '1s', '1/2s', '1/4s', '1/8s', '1/16s', '1/32s', '1/64s'];
+const SPEEDS = [5000, 2000, 1000, 500, 250, 125, 62, 31, 16, 8, 4];
+const SPEED_LABELS = ['5s', '2s', '1s', '1/2s', '1/4s', '1/8s', '1/16s', '1/32s', '1/64s', '1/128s', '1/256s'];
 
 const BOT_DEFS = [
-	{ Class: LawnmowerBot, color: '#4488ff' },
+	{ Class: AirportLineBot, color: '#4488ff' },
+	{ Class: LawnmowerBot,  color: '#cc44cc' },
 	{ Class: ChaosBot,     color: '#44cc44' },
 ];
 
@@ -19,7 +20,7 @@ class Game {
 		this.cells = null;
 		this.bots = [];
 		this.interval = null;
-		this.currentSpeed = SPEEDS[2];
+		this.currentSpeed = SPEEDS[9];
 	}
 
 	start() {

@@ -5,30 +5,24 @@ class LawnmowerBot {
 		this.row = row;
 		this.color = color;
 		this.dead = false;
-		this.lateralDir = Math.random() < 0.5 ? -1 : 1;
+		this.dirs = [
+			[ 0, -1],  // up
+			[ 1,  0],  // right
+			[ 0,  1],  // down
+			[-1,  0],  // left
+		];
+		this.dirIndex = Math.floor(Math.random() * 4);
 	}
 
 	makeMove() {
-		if (this.game.canMoveTo(this.col + this.lateralDir, this.row, this)) {
-			this.game.moveBotTo(this, this.col + this.lateralDir, this.row);
-			return true;
-		}
-
-		const vertDirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
-		for (const vDir of vertDirs) {
-			if (this.game.canMoveTo(this.col, this.row + vDir, this)) {
-				this.game.moveBotTo(this, this.col, this.row + vDir);
-				this.lateralDir = -this.lateralDir;
+		for (let i = 0; i < 4; i++) {
+			const [dc, dr] = this.dirs[this.dirIndex];
+			if (this.game.canMoveTo(this.col + dc, this.row + dr, this)) {
+				this.game.moveBotTo(this, this.col + dc, this.row + dr);
 				return true;
 			}
+			this.dirIndex = (this.dirIndex + 1) % 4;
 		}
-
-		if (this.game.canMoveTo(this.col - this.lateralDir, this.row, this)) {
-			this.game.moveBotTo(this, this.col - this.lateralDir, this.row);
-			this.lateralDir = -this.lateralDir;
-			return true;
-		}
-
 		return false;
 	}
 }
