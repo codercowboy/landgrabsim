@@ -25,6 +25,7 @@ const POWERUP_DEFS = [
 		id: 'speed',
 		name: 'Speed Boost',
 		color: '#00ffcc',
+		icon: '<span class="pu-icon pu-speed">▲</span>',
 		count: 1,
 		apply(bot) {
 			bot.ticksPerMove = 5;
@@ -41,6 +42,7 @@ const POWERUP_DEFS = [
 		id: 'multiball',
 		name: 'Multiball',
 		color: '#ffaa00',
+		icon: '<span class="pu-icon pu-multiball"><span></span><span></span><span></span></span>',
 		apply(bot) {
 			const def = BOT_DEFS[bot.defIndex];
 			if (!def) return;
@@ -64,6 +66,7 @@ const POWERUP_DEFS = [
 		id: 'instant-death',
 		name: 'instant death!!!',
 		color: '#ff0000',
+		icon: '<span class="pu-icon pu-death">✕</span>',
 		apply(bot) {
 			bot.dead = true;
 			for (const mate of (bot.teammates || [])) mate.dead = true;
@@ -437,6 +440,7 @@ function buildPowerupPanel() {
 			<input type="checkbox" class="powerup-checkbox" data-index="${i}" checked>
 			<span class="powerup-swatch" style="background:${def.color};box-shadow:0 0 6px ${def.color}"></span>
 			<span class="powerup-name">${def.name}</span>
+			${def.icon || ''}
 		`;
 		list.appendChild(label);
 	});
@@ -496,6 +500,14 @@ document.getElementById('modal-cancel').addEventListener('click', () => {
 
 document.getElementById('modal-ok').addEventListener('click', () => {
 	modalOverlay.classList.add('hidden');
+});
+
+const whatOverlay = document.getElementById('what-overlay');
+document.getElementById('what').addEventListener('click', () => {
+	whatOverlay.classList.remove('hidden');
+});
+document.getElementById('what-ok').addEventListener('click', () => {
+	whatOverlay.classList.add('hidden');
 });
 
 const powerupCountSlider = document.getElementById('powerup-count');

@@ -104,6 +104,13 @@ h1 {
 	color: #aaaaaa;
 }
 
+.button-row {
+	display: flex;
+	flex-direction: row;
+	gap: 8px;
+	align-items: center;
+}
+
 #new-game {
 	padding: 8px 28px;
 	font-size: 0.95em;
@@ -136,6 +143,37 @@ h1 {
 	background: #333333;
 	border-color: #666666;
 	color: #cccccc;
+}
+
+#what {
+	padding: 8px 16px;
+	font-size: 0.95em;
+	font-family: monospace;
+	cursor: pointer;
+	background: #2a2a2a;
+	color: #555555;
+	border: 1px solid #383838;
+	letter-spacing: 0.05em;
+}
+
+#what:hover {
+	background: #333333;
+	border-color: #555555;
+	color: #888888;
+}
+
+.modal-panel-narrow {
+	min-width: 0;
+	width: 380px;
+}
+
+.what-body {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	font-size: 0.82em;
+	color: #888888;
+	line-height: 1.6;
 }
 
 /* Powerup panel */
@@ -482,9 +520,9 @@ h1 {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	margin-top: 14px;
-	padding-top: 12px;
-	border-top: 1px solid #2a2a2a;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #2a2a2a;
 }
 
 .powerup-count-label {
@@ -506,4 +544,39 @@ h1 {
 	color: #aaaaaa;
 	min-width: 16px;
 	text-align: right;
+}
+
+.pu-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	font-size: 0.8em;
+	margin-left: auto;
+}
+
+.pu-speed {
+	color: #44cc44;
+	font-size: 0.9em;
+}
+
+.pu-multiball {
+	width: 14px;
+	height: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.5);
+	border-radius: 50%;
+	gap: 2px;
+}
+
+.pu-multiball span {
+	width: 3px;
+	height: 3px;
+	background: rgba(255, 255, 255, 0.8);
+	border-radius: 50%;
+	display: block;
+}
+
+.pu-death {
+	color: #ff3333;
+	font-size: 0.9em;
 }

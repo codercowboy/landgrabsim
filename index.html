@@ -21,8 +21,11 @@
 					<span class="speed-label">Fast</span>
 					<span id="speed-display">1s</span>
 				</div>
-				<button id="new-game">New Game</button>
-				<button id="settings">Settings</button>
+				<div class="button-row">
+					<button id="settings">Settings</button>
+					<button id="new-game">New Game</button>
+					<button id="what">what?</button>
+				</div>
 			</div>
 		</div>
 		<aside class="side-panel">
@@ -43,12 +46,12 @@
 				</div>
 				<div class="modal-section modal-section-right">
 					<div class="modal-section-title">Powerups</div>
-					<div id="powerup-list"></div>
 					<div class="powerup-count-row">
 						<span class="powerup-count-label">Count</span>
 						<input type="range" id="powerup-count" min="1" max="10" value="3">
 						<span id="powerup-count-display">3</span>
 					</div>
+					<div id="powerup-list"></div>
 				</div>
 			</div>
 			<div class="modal-length-row">
@@ -59,6 +62,19 @@
 			<div class="modal-actions">
 				<button class="modal-btn" id="modal-cancel">Cancel</button>
 				<button class="modal-btn modal-btn-start" id="modal-ok">OK</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="what-overlay" class="modal-overlay hidden">
+		<div class="modal-panel modal-panel-narrow">
+			<div class="modal-title">what is this?</div>
+			<div class="what-body">
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+				<p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+			</div>
+			<div class="modal-actions">
+				<button class="modal-btn modal-btn-start" id="what-ok">ok, i guess?</button>
 			</div>
 		</div>
 	</div>
